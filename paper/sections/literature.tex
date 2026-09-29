@@ -14,13 +14,23 @@ The data-driven newsvendor literature learns order quantities directly from data
 In energy forecasting, \citet{Wang2019cqra} combine probabilistic load forecasts by minimising pinball loss on the simplex, one series at a time.
 This literature trains single models or combines forecasts for one unit; it does not exploit cross-sectional structure when many heterogeneous units face related decisions.
 
+\paragraph{Deep learning for forecasting and for combination weights.}
+Pretrained time-series foundation models such as Chronos \citep{Ansari2024chronos} now forecast unseen series zero-shot with accuracy close to models trained on the target data, and deep networks are increasingly used to \emph{produce} combination weights: FFORMA maps series features to weights with gradient boosting \citep{MonteroManso2020}, and mixture-of-experts model averaging uses a softmax neural gate with covariate-dependent weights \citep{Gong2026moe}.
+These approaches are flexible, but they fit thousands of parameters, their weights are hard to audit, and---except for \citet{Gong2026moe}, who study conditional generative models---they come without optimality guarantees for the combined decision.
+We include both a foundation model (as a candidate) and a decision-focused neural gate (as a competitor) in our application.
+
+\paragraph{Storage siting.}
+Where to place grid-scale batteries is usually decided with engineering models of the transmission network, solved by decomposition or stochastic programming \citep{Piansky2024battery,Larroux2026bess}.
+These models take the uncertainty that storage must absorb as an input.
+We make that input endogenous: the residual commitment risk depends on how operators combine their forecasts, so the value and the best location of storage depend on the forecasting policy.
+
 \paragraph{Latent group structures.}
 Panel econometrics models unobserved heterogeneity through latent groups estimated by $k$-means-type algorithms \citep{LinNg2012,BonhommeManresa2015,AndoBai2016} or classifier-Lasso \citep{Su2016}.
 These methods group \emph{regression parameters} under squared loss and focus on the parameters themselves, not on combining the outputs of existing forecasting systems under an asymmetric decision loss.
 
 \paragraph{The gap.}
 Table~\ref{tab:gap} summarises the position of GDMA.
-No existing method simultaneously (a) combines a library of existing candidate rules, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares statistical strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery.
+No existing method simultaneously (a) combines a library of existing candidate rules, including machine-learning and foundation-model forecasts, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares statistical strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery; nor does any link the resulting operational risk to the siting of new storage.
 Filling this gap matters most when windows are short---because systems change and old data are stale---and units are many, which is exactly the situation of system-wide infrastructure planning.
 
 \begin{table}[t]
@@ -37,6 +47,7 @@ Pooled combination & \checkmark & & \checkmark & \\
 Quantile / general-loss model averaging & \checkmark & \checkmark & & \checkmark \\
 Shrinkage towards equal or pooled weights & \checkmark & & partial & \checkmark \\
 Feature-based weights (FFORMA) & \checkmark & & \checkmark & \checkmark \\
+Neural mixture-of-experts gate & \checkmark & (\checkmark) & \checkmark & \checkmark \\
 Data-driven newsvendor / predict-then-optimise & & \checkmark & \checkmark & \\
 Latent-group panel models & & & \checkmark & \checkmark \\
 \textbf{GDMA (this paper)} & \checkmark & \checkmark & \checkmark & \checkmark \\
