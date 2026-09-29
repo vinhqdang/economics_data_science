@@ -91,8 +91,12 @@ def main():
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--n_init", type=int, default=4)
+    ap.add_argument("--variants", action="store_true",
+                    help="only run GDMA variants (G chosen by the hold-out minimum)")
     args = ap.parse_args()
     tag = args.tag or f"w{args.window}_tau{args.tau}"
+    if args.variants:
+        return run_variants(args, tag)
 
     d = np.load(os.path.join(ROOT, "data", "processed", "panel.npz"), allow_pickle=True)
     Y, F = d["Y"].astype(float), d["F"].astype(float)
@@ -179,6 +183,44 @@ def main():
     tot = cost.sum(axis=(1, 2, 3))
     for k, name in enumerate(METHOD_NAMES):
         print(f"[{tag}] {name:12s} total cost / EW = {tot[k] / tot[1]:.4f}")
+
+
+def run_variants(args, tag):
+    """GDMA with G chosen by the plain hold-out minimum (rule='min')."""
+    d = np.load(os.path.join(ROOT, "data", "processed", "panel.npz"), allow_pickle=True)
+    Y, F = d["Y"].astype(float), d["F"].astype(float)
+    first = int(d["first_day"])
+    M, N, Dn, H = F.shape
+    u, o, tau = calibrate_costs(d["flex"], args.tau)
+    P = candidate_policies(Y, F, tau, first)
+    scale = np.nanmean(Y[:, first:], axis=(1, 2))
+    start = first + RESID_DAYS + MAX_WINDOW
+    origins = np.arange(start, Dn, STEP)
+    names = ["GDMA-min"]
+    orders = np.full((1, N, Dn, H), np.nan)
+    Gs, prev = [], None
+    for n, d0 in enumerate(origins):
+        win = np.arange(d0 - args.window, d0)
+        out = np.arange(d0, min(d0 + STEP, Dn))
+        Q, y = window_arrays(P, Y, win)
+        Qo = P[:, :, out, :]
+        g = select_grouped(Q, y, G_MAX, u, o, scale=scale, n_init=args.n_init,
+                           init_labels=prev, rule="min")
+        prev = g["labels"]
+        orders[0][:, out] = np.einsum("mnlh,nm->nlh", Qo, g["W"][g["labels"]])
+        Gs.append(g["G"])
+        if n % 40 == 0:
+            print(f"[{tag} variants] origin {n + 1}/{len(origins)} G={g['G']}", flush=True)
+    ev = np.arange(start, Dn)
+    yy = Y[:, ev, :]
+    valid = np.isfinite(yy)
+    cost = np.where(valid[None], newsvendor_cost(yy[None], orders[:, :, ev, :],
+                                                  u[None, :, None, None], o[None, :, None, None]), 0.0)
+    short = np.where(valid[None], orders[:, :, ev, :] < yy[None], False)
+    np.savez_compressed(os.path.join(ROOT, "results", f"variants_{tag}.npz"),
+                        daily_cost=cost.sum(axis=3), short_hours=short.sum(axis=3),
+                        methods=np.array(names), eval_days=ev, G=np.array(Gs))
+    print(f"[{tag} variants] done")
 
 
 if __name__ == "__main__":

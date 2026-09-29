@@ -21,13 +21,27 @@ os.makedirs(FIG, exist_ok=True)
 LABEL = {"Official": "Official forecast", "EW": "Equal weights", "Select": "Best single (per BA)",
          "Pooled": "Pooled DF weights", "PerBA": "Per-BA DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerBA": "Forecast-then-commit, per BA",
-         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "\\textbf{GDMA}"}
+         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "\\textbf{GDMA}", "GDMA-min": "GDMA, minimum hold-out rule"}
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 
 
 def load(tag):
     d = np.load(os.path.join(ROOT, "results", f"backtest_{tag}.npz"), allow_pickle=True)
-    return {k: d[k] for k in d.files}
+    r = {k: d[k] for k in d.files}
+    vp = os.path.join(ROOT, "results", f"variants_{tag}.npz")
+    if os.path.exists(vp):
+        v = np.load(vp, allow_pickle=True)
+        assert np.array_equal(v["eval_days"], r["eval_days"])
+        r["daily_cost"] = np.concatenate([r["daily_cost"], v["daily_cost"]])
+        r["short_hours"] = np.concatenate([r["short_hours"], v["short_hours"]])
+        r["methods"] = np.concatenate([r["methods"], v["methods"]])
+        r["G_min"] = v["G"]
+    # BA-days on which any method lacks a commitment (all candidates missing)
+    # are dropped for every method so that all methods are scored on the same cells
+    bad = np.isnan(r["daily_cost"]).any(axis=0)
+    r["daily_cost"] = np.where(bad[None], 0.0, r["daily_cost"])
+    r["n_dropped"] = int(bad.sum())
+    return r
 
 
 def dm_test(a, b, lag=7):
