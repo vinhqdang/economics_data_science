@@ -82,7 +82,7 @@ Plain GDMA improves significantly on pooled weights for $W\ge14$ and on per-BA w
 Choosing $G$ by the plain hold-out minimum instead of the one-standard-error rule is worse for short windows (0.823 against 0.816 at $W=7$), confirming that parsimony matters when hold-out costs are noisy.
 
 \emph{Fourth, the savings are economically large.}
-At $W=28$ the official-forecast policy costs 0.0761 units of idle-capacity cost per MWh of demand and soft GDMA 0.0610, a saving of 0.0151 units per MWh.
+At $W=28$ the official-forecast policy costs 0.0761 units of idle-capacity cost per MWh of demand and soft GDMA 0.0609, a saving of 0.0152 units per MWh.
 Over the 4.0 billion MWh of annual demand in our panel, and valuing idle committed capacity at an illustrative \$10 per MWh, this is roughly \$600 million a year for the system as a whole, obtained by re-weighting forecasts that the operators already produce.
 The saving is not driven by a few operators: 80\% of BAs are individually better off than under their own official forecast (last column of Table~\ref{tab:main}).
 
@@ -145,4 +145,6 @@ The episode is a reminder that combination weights learned in calm weeks cannot 
 \input{tables/tau.tex}
 \end{table}
 
-\RESULTSTAU
+Table~\ref{tab:tau} replaces the calibrated critical ratios by a common $\tau$ for every BA, from the symmetric case $\tau=0.5$ to the highly asymmetric $\tau=0.95$.
+The level of the savings changes little---soft GDMA saves 19--23\% relative to the official-forecast policy---and so does the ranking: soft GDMA is the cheapest method for $\tau\in\{0.5,0.9,0.95\}$ and under the calibrated ratios, and ties with shrinkage for $\tau=0.8$.
+The advantage of decision-focused over forecast-then-commit combination grows with the asymmetry, from 2.5\% at $\tau=0.5$ to 3.4\% at $\tau=0.95$ relative to the better forecast-then-commit method, as expected: the more asymmetric the cost, the more the best combination for the decision departs from the most accurate one.

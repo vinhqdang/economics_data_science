@@ -80,7 +80,7 @@ def summary(r):
 
 
 def main():
-    tags = sorted(os.path.basename(p)[9:-4] for p in glob.glob(os.path.join(ROOT, "results", "backtest_*.npz")))
+    tags = sorted(os.path.basename(p)[9:-4] for p in glob.glob(os.path.join(ROOT, "results", "backtest_w*.npz")))
     print("found", tags)
     windows = [t for t in tags if t.endswith("taucalibrated")]
     windows = sorted(windows, key=lambda t: int(t.split("_")[0][1:]))
