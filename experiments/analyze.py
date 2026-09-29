@@ -21,7 +21,7 @@ os.makedirs(FIG, exist_ok=True)
 LABEL = {"Official": "Official forecast", "EW": "Equal weights", "Select": "Best single (per BA)",
          "Pooled": "Pooled DF weights", "PerBA": "Per-BA DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerBA": "Forecast-then-commit, per BA",
-         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "\\textbf{GDMA}", "GDMA-min": "GDMA, minimum hold-out rule",
+         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "GDMA", "GDMA-min": "GDMA, minimum hold-out rule",
          "GDMA-soft": "\\textbf{Soft GDMA}"}
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 
@@ -63,7 +63,8 @@ def summary(r):
     C = r["daily_cost"]                          # (K, N, days)
     sysd = C.sum(axis=1)                         # (K, days) system cost per day
     tot = sysd.sum(axis=1)
-    k_ew, k_off, k_g = meth.index("EW"), meth.index("Official"), meth.index("GDMA")
+    ref = "GDMA-soft" if "GDMA-soft" in meth else "GDMA"
+    k_ew, k_off, k_g = meth.index("EW"), meth.index("Official"), meth.index(ref)
     # scale-free: each BA's cost divided by its mean hourly demand, averaged
     norm = (C.sum(axis=2) / r["scale"][None]).mean(axis=1)
     per_ba = C.sum(axis=2)
@@ -108,7 +109,7 @@ def main():
             if np.isclose(s.rel_off, best):
                 v = r"\textbf{" + v + "}"
             star = ""
-            if m != "GDMA" and np.isfinite(s.dm_p):
+            if np.isfinite(s.dm_p):
                 star = "$^{***}$" if s.dm_p < 0.01 else "$^{**}$" if s.dm_p < 0.05 else "$^{*}$" if s.dm_p < 0.1 else ""
             cells.append(v + star)
         share = f"{summ[main_w].loc[m].beat_off:.2f}" if m in summ[main_w].index else "--"
@@ -123,7 +124,7 @@ def main():
              r"Method & Scale-free cost$^b$ & Shortfall & DM statistic \\",
              r" & (rel.\ to EW) & frequency & vs GDMA$^c$ \\", r"\midrule"]
     for m in s.index:
-        dm = "--" if m == "GDMA" else f"{s.loc[m].dm_t:.2f}"
+        dm = "--" if not np.isfinite(s.loc[m].dm_t) else f"{s.loc[m].dm_t:.2f}"
         lines.append(f"{LABEL[m]} & {s.loc[m].norm_rel_ew:.4f} & {s.loc[m].short_rate:.3f} & {dm}" + r" \\")
     lines += [r"\midrule", f"Target (mean $\\tau_i$ across BAs) & & {1 - tau.mean():.3f} & " + r"\\",
               r"\bottomrule", r"\end{tabular}"]
