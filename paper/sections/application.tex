@@ -32,13 +32,15 @@ Seven candidate forecasts are produced for every BA, day and hour, each using on
 (7) a single global LightGBM model \citep{Ke2017} across all BAs and hours, trained on lags, calendar variables and the official forecast, all scaled by the BA's recent mean demand, refitted every 28 days on the preceding 365 days.
 Model (7) is the kind of machine-learning forecaster a central planner could run for every BA at low cost.
 Each forecast $f^{(m)}$ becomes a candidate commitment by adding its own safety margin,
-$q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\}$,
+\[
+q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\,\big\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\big\},
+\]
 where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors of forecast $m$ for BA $i$ over the previous 28 days.
 The candidate rules are available from February 2020, so the evaluation period runs from 1 April 2020 to 26 September 2026: 2,342 days, 335 weekly re-estimations and 2.58 billion MWh of demand.
 
 \subsection{Competing methods}
 
-Every seven days each method re-estimates its combination from the most recent $W\in\{7,14,28,56\}$ days (each day contributes 24 hourly observations per BA) and commits for the following seven days.
+Every seven days each method re-estimates its combination from the most recent $W$ days, $W\in\{7,14,28,56\}$ (each day contributes 24 hourly observations per BA) and commits for the following seven days.
 Besides GDMA and soft GDMA ($G_{\max}=6$) we consider:
 the official-forecast policy (candidate~1 alone), which is the status quo;
 equal weights over the seven candidates;
