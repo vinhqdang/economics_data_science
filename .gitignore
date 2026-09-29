@@ -230,3 +230,5 @@ paper/*.out
 paper/*.toc
 results/*.log
 results/old/
+results/queue_status.txt
+results/orders_*.npz
