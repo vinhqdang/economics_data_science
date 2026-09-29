@@ -137,7 +137,7 @@ def main():
     reps = int(os.environ.get("REPS", 50))
     grid = list(itertools.product([50, 200], [48, 168, 672], ["grouped", "homogeneous", "continuous"],
                                   range(reps)))
-    with Pool(4) as pool:
+    with Pool(int(os.environ.get("POOL", 4))) as pool:
         rows = []
         for i, r in enumerate(pool.imap_unordered(one_rep, grid, chunksize=1)):
             rows.append(r)
