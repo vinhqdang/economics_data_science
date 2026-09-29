@@ -1,3 +1,42 @@
 \section{Monte Carlo evidence}\label{sec:sim}
 
-PENDING
+\subsection{Design}
+
+We simulate $N\in\{50,200\}$ units and $M=5$ candidate commitment rules.
+Unit $i$ has demand $y_{it}=\mu_i+x_{it}$, with $\mu_i\sim U[20,100]$ and $x_{it}$ a stationary AR(1) process with coefficient 0.5 and standard deviation 5, and critical ratio $\tau_i\sim U[0.6,0.95]$ ($u_i=\tau_i/(1-\tau_i)$, $o_i=1$).
+Candidate $m$ forecasts $f_{itm}=y_{it}-e_{itm}$, where the errors follow AR(1) processes with coefficient 0.5 and innovations with unit-specific scales $s_{im}$ and skewness signs $k_{im}\in\{-1,0,+1\}$ (a centred gamma distribution for $\pm1$, a normal distribution for 0).
+Each candidate becomes a commitment by adding the $\tau_i$-quantile of its errors in a pre-sample of 200 periods.
+Three designs define the heterogeneity:
+\emph{grouped}---every unit belongs to one of three segments with segment-specific error profiles $(s_{i\cdot},k_{i\cdot})$, so that different candidates are best in different segments;
+\emph{homogeneous}---all units share the first profile;
+\emph{continuous}---each unit's error scales are a Dirichlet(1,1,1) mixture of the three profiles, so that no two units share their optimal weights and GDMA's segment structure is misspecified.
+Weights are estimated on $T\in\{48,168,672\}$ periods and evaluated on 1,000 new periods.
+We report the out-of-sample cost relative to an infeasible oracle that uses, for every unit, the exact cost-minimising weights on the evaluation sample itself.
+Each cell uses 50 replications.
+
+\subsection{Results}
+
+\begin{table}[t]
+\centering
+\caption{Monte Carlo results: out-of-sample newsvendor cost relative to the unit-specific oracle (means over 50 replications), average selected number of segments $\bar G$ of GDMA, and adjusted Rand index (ARI; \citealp{HubertArabie1985}) between estimated and true segments for GDMA and two-step clustering. Bold: lowest in the row.}\label{tab:sim}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/simulation.tex}
+\end{table}
+
+Table~\ref{tab:sim} supports the theory and clarifies when grouping pays.
+
+\emph{Soft GDMA is the most reliable method.}
+It has the lowest cost, or is within 0.1 percentage points of the lowest, in every one of the 18 cells.
+Its advantage is largest when windows are short: with true segments and $T=48$ it is 3.5--4.1\% above the oracle against 8.4--8.6\% for unit-specific weights, and even under continuous heterogeneity, where segments are misspecified, it beats unit-specific weights (6.2--6.8\% against 9.1--9.4\% above the oracle) and shrinkage towards pooled weights (7.5\%).
+When units share one error profile it matches pooled weights for short windows and beats them for long ones, where the heterogeneity in critical ratios makes some unit-level adjustment worthwhile.
+
+\emph{Hard segments trade bias for variance exactly as Theorem~\ref{thm:oracle} predicts.}
+Plain GDMA beats unit-specific weights in 96--100\% of the replications with true segments and $T=48$, and in all replications with homogeneous units for $T\le168$.
+With long windows ($T=672$), unit-specific weights are estimated precisely and become slightly better (1.2--1.3\% against 1.7--1.8\% above the oracle).
+Here GDMA selects five to six segments rather than three, because units within a true segment have different critical ratios and therefore different optimal weights: with enough data the hold-out rule correctly detects this finer structure, which is also why the ARI falls from about 0.9 at $T=48$ to about 0.65 at $T=672$.
+Soft GDMA removes this residual bias through unit-level shrinkage and is never worse than unit-specific weights by more than 0.1 percentage points.
+
+\emph{Joint estimation recovers segments better than clustering estimated weights.}
+With short windows, the ARI of GDMA is 0.87--0.93, against 0.75--0.79 for two-step $k$-means on noisy unit-level weights, and GDMA's cost is lower in every grouped cell with $T\le168$.
+When units share one error profile, the one-standard-error rule selects a single segment in most replications with $T\le168$ ($\bar G=1.0$--$1.3$).
