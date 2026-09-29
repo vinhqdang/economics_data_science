@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# large data (rebuilt by the scripts in experiments/)
+data/raw/
+data/interim/
+data/processed/*.npz
+results/backtest_*.npz
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.toc

@@ -1,0 +1,85 @@
+\section{Proofs}\label{app:proofs}
+
+Throughout, $\|\cdot\|_1$ is the $\ell_1$ norm and constants $c,C$ may change from line to line.
+
+\paragraph{Covering the simplex.}
+For $\epsilon\in(0,1]$ there is a set $\mathcal N_\epsilon\subset\Delta_M$ with $|\mathcal N_\epsilon|\le(3/\epsilon)^M$ such that every $\bm w\in\Delta_M$ has a point $\bm w'\in\mathcal N_\epsilon$ with $\|\bm w-\bm w'\|_1\le\epsilon$ (volumetric argument for the $\ell_1$ ball, e.g.\ \citealp[Ch.~4]{Vershynin2018}).
+Hence $\mathcal N_\epsilon^G$ is an $\epsilon$-net of $\Delta_M^G$ in the norm $\max_g\|\bm w_g-\bm w'_g\|_1$, of cardinality at most $(3/\epsilon)^{GM}$.
+
+\paragraph{Lipschitz property.}
+For all $(\bm\gamma,\bm W)$ and $(\bm\gamma,\bm W')$ with $\max_g\|\bm w_g-\bm w_g'\|_1\le\epsilon$, Assumption~\ref{as:bounded} gives
+$|\widehat R(\bm\gamma,\bm W)-\widehat R(\bm\gamma,\bm W')|\le\bar aB\epsilon$ and $|R(\bm\gamma,\bm W)-R(\bm\gamma,\bm W')|\le\bar aB\epsilon$.
+
+\subsection*{Proof of Theorem~\ref{thm:oracle}}
+
+Fix $\epsilon=1/(NT_e)$.
+The set $\mathcal F=\{1,\dots,G\}^N\times\mathcal N_\epsilon^G$ has cardinality at most $G^N(3NT_e)^{GM}$.
+By Assumption~\ref{as:concentration} and the union bound,
+\[
+\Pr\Big(\max_{(\bm\gamma,\bm W)\in\mathcal F}|\widehat R(\bm\gamma,\bm W)-R(\bm\gamma,\bm W)|>x\Big)\le 2G^N(3NT_e)^{GM}\exp(-cNT_ex^2/L^2).
+\]
+Setting the right-hand side equal to $\delta$ gives, with probability at least $1-\delta$,
+$\max_{\mathcal F}|\widehat R-R|\le x_\delta:=L\{(GM\log(3NT_e)+N\log G+\log(2/\delta))/(cNT_e)\}^{1/2}$.
+For an arbitrary $(\bm\gamma,\bm W)\in\mathcal P_G$ let $\bm W'$ be its nearest net point; by the Lipschitz property,
+\[
+\sup_{\mathcal P_G}|\widehat R-R|\le x_\delta+2\bar aB\epsilon .
+\]
+Let $(\bm\gamma^*,\bm W^*)$ satisfy $R(\bm\gamma^*,\bm W^*)\le R^*_G+\eta$ for arbitrary $\eta>0$.
+Since $(\widehat{\bm\gamma},\widehat{\bm W})$ minimises $\widehat R$,
+\[
+R(\widehat{\bm\gamma},\widehat{\bm W})\le\widehat R(\widehat{\bm\gamma},\widehat{\bm W})+x_\delta+2\bar aB\epsilon
+\le\widehat R(\bm\gamma^*,\bm W^*)+x_\delta+2\bar aB\epsilon\le R^*_G+\eta+2x_\delta+4\bar aB\epsilon .
+\]
+Letting $\eta\downarrow0$ and substituting $\epsilon=1/(NT_e)$ gives~\eqref{eq:oracle}. \qed
+
+\subsection*{Proof of Corollary~\ref{cor:ao}}
+
+Theorem~\ref{thm:oracle} with $\delta=\delta_{N,T}\to0$ slowly (for instance $\log(1/\delta)=\log(NT_e)$) shows $R(\widehat{\bm\gamma},\widehat{\bm W})-R^*_G=O_p(r_{N,T})$ with
+$r_{N,T}=\{GM\log(NT_e)/(NT_e)+\log G/T_e+\log(NT_e)/(NT_e)\}^{1/2}\to0$.
+Dividing by $R^*_G\ge\kappa$ yields $R(\widehat{\bm\gamma},\widehat{\bm W})/R^*_G-1=O_p(r_{N,T}/\kappa)\to_p0$.
+Because $R(\widehat{\bm\gamma},\widehat{\bm W})\ge R^*_N$ always and $R^*_G\ge R^*_N$, the second claim follows once we show $R^*_G=R^*_N$ under the stated structure.
+Let $\bm w^0_g$ be a common minimiser of $R_i$ for all $i$ with $\gamma^0_i=g$ (padding with arbitrary vectors if $G_0<G$); then
+$R(\bm\gamma^0,\bm W^0)=N^{-1}\sum_i\min_{\bm w}R_i(\bm w)=R^*_N$, so $R^*_G\le R^*_N$, and the reverse inequality holds because $\mathcal P_G$ is a subset of the unit-specific class. \qed
+
+\subsection*{Proof of Theorem~\ref{thm:recovery}}
+
+\emph{Step 1 (average consistency).}
+Under Assumption~\ref{as:groups}(a), $R^*_G=R(\bm\gamma^0,\bm W^0)=R^*_N$ and
+\[
+\frac\lambda N\sum_{i=1}^N\big\|\widehat{\bm w}_{\widehat\gamma_i}-\bm w^0_{\gamma^0_i}\big\|_2^2\le R(\widehat{\bm\gamma},\widehat{\bm W})-R^*_G=o_p(1)
+\]
+by Theorem~\ref{thm:oracle}, since $\log N/T_e\to0$ implies $\log G/T_e\to0$ and $GM\log(NT_e)/(NT_e)\to0$ for fixed $G$ and $M$.
+
+\emph{Step 2 (consistency of the segment weights).}
+Fix $\eta\in(0,d/4)$.
+By Step~1 and Markov's inequality, the fraction of units with $\|\widehat{\bm w}_{\widehat\gamma_i}-\bm w^0_{\gamma^0_i}\|_2>\eta$ is $o_p(1)$.
+Since every true segment $g$ contains at least $\pi N$ units, with probability approaching one each $g$ contains a unit $i$ with $\|\widehat{\bm w}_{\widehat\gamma_i}-\bm w^0_g\|_2\le\eta$; call $h(g)=\widehat\gamma_i$.
+If $h(g)=h(g')$ for $g\ne g'$, the triangle inequality gives $\|\bm w^0_g-\bm w^0_{g'}\|_2\le2\eta<d$, contradicting Assumption~\ref{as:groups}(b).
+Thus $h$ is injective, hence a bijection of $\{1,\dots,G\}$, and after relabelling $\max_g\|\widehat{\bm w}_g-\bm w^0_g\|_2\le\eta$ with probability approaching one.
+Since $\eta$ is arbitrary, (i) follows.
+
+\emph{Step 3 (memberships).}
+On the event $E_\eta=\{\max_g\|\widehat{\bm w}_g-\bm w^0_g\|_2\le\eta\}$, unit $i$ with $\gamma^0_i=g$ can be assigned to $h\ne g$ only if $\widehat R_i(\widehat{\bm w}_h)\le\widehat R_i(\widehat{\bm w}_g)$; every global minimiser assigns each unit to a segment minimising its own empirical cost, since otherwise reassigning the unit would lower~\eqref{eq:gdma}.
+By Assumption~\ref{as:groups} and the Lipschitz property (with $\|\cdot\|_1\le\sqrt M\|\cdot\|_2$),
+\[
+R_i(\widehat{\bm w}_h)-R_i(\widehat{\bm w}_g)\ge\lambda(d-\eta)^2-\bar aB\sqrt M\eta\ge\lambda d^2/4=:\Delta
+\]
+for $\eta$ small enough.
+Hence misclassification of unit $i$ on $E_\eta$ requires $\sup_{\bm w\in\Delta_M}|\widehat R_i(\bm w)-R_i(\bm w)|\ge\Delta/2$.
+Covering $\Delta_M$ by $\mathcal N_\epsilon$ with $\epsilon=\Delta/(8\bar aB)$ and applying the unit-level part of Assumption~\ref{as:concentration},
+\[
+\Pr\Big(\sup_{\bm w}|\widehat R_i(\bm w)-R_i(\bm w)|\ge\Delta/2\Big)\le2\Big(\frac{24\bar aB}{\Delta}\Big)^M\exp\!\Big(-\frac{cT_e\Delta^2}{16L^2}\Big)=:C_M e^{-c'T_e}.
+\]
+Because the supremum is over all $\bm w$, the bound does not require independence between $\widehat{\bm W}$ and unit $i$'s data.
+A union bound over units gives $\Pr(\widehat{\bm\gamma}\ne\bm\gamma^0)\le\Pr(E_\eta^c)+NC_Me^{-c'T_e}$, which tends to zero because $\log N/T_e\to0$. This is (ii).
+
+\emph{Step 4 (oracle equivalence).}
+On the event $\{\widehat{\bm\gamma}=\bm\gamma^0\}$, $\widehat{\bm W}$ minimises $\widehat R(\bm\gamma^0,\cdot)$, so $\widehat{\bm W}=\widetilde{\bm W}$ (if the minimiser is not unique, the two estimators select from the same set).
+By (ii) this event has probability approaching one. \qed
+
+\section{Out-of-sample risk}\label{app:oos}
+
+The theory concerns the population risk $R$ evaluated at the estimated policy.
+In a rolling application the policy estimated on periods $1,\dots,T$ is applied in periods $T+1,\dots,T+k$.
+If $\{\bm z_{it}\}$ is $\beta$-mixing with coefficients $\beta(\cdot)$, a coupling argument \citep{Yu1994} shows that the expected cost of the estimated policy in period $T+s$ differs from $\mathbb E\,R(\widehat{\bm\gamma},\widehat{\bm W})$ by at most $L\beta(s)$.
+The bounds of Section~\ref{sec:theory} therefore also bound the out-of-sample cost up to a term that vanishes with the gap between estimation and application.

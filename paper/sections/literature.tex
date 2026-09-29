@@ -1,0 +1,45 @@
+\section{Related literature and the research gap}\label{sec:lit}
+
+\paragraph{Model averaging and forecast combination.}
+Since \citet{BatesGranger1969}, combining forecasts has been one of the most reliable ways to improve predictive accuracy; \citet{Timmermann2006} and \citet{Wang2023review} review five decades of work.
+Frequentist model averaging chooses weights by minimising an estimate of risk---a Mallows criterion \citep{Hansen2007}, leave-one-out or $K$-fold cross-validation \citep{HansenRacine2012,ZhangLiu2023}, or forward validation for time series \citep{ZhangZhang2023}---and establishes asymptotic optimality, i.e.\ that the chosen weights attain the lowest attainable risk.
+The framework now covers dependent data \citep{ZhangWanZou2013}, quantile losses \citep{LuSu2015}, general losses \citep{Yu2024unified}, time-varying weights \citep{Sun2021tvma}, covariate-dependent weights \citep{Gong2026moe}, covariate shift \citep{Zhang2026shift} and prediction intervals \citep{Qu2025intervals}.
+The forecast-combination puzzle---that equal weights frequently beat estimated weights---is attributed mainly to estimation error in the weights \citep{SmithWallis2009,Claeskens2016}; remedies shrink estimated weights towards equal weights \citep{DieboldShin2019} or restrict them \citep{Zou2025weights}.
+When many series must be forecast, weights are either estimated series by series or learned from series features \citep[FFORMA,][]{MonteroManso2020}; \citet{AiolfiTimmermann2006} cluster \emph{forecasting models} by past performance.
+All of these approaches either treat each target series separately or impose one rule on all of them, and none groups the \emph{target units}.
+
+\paragraph{Decision-focused learning.}
+Operations research has long recognised that the loss that matters is the decision cost \citep{Granger1969}.
+The data-driven newsvendor literature learns order quantities directly from data \citep{Levi2015,BanRudin2019}; prescriptive analytics maps covariates to decisions \citep{BertsimasKallus2020}; and ``smart predict-then-optimise'' trains predictors on decision regret \citep{ElmachtoubGrigas2022}; see \citet{Mandi2024} for a survey.
+In energy forecasting, \citet{Wang2019cqra} combine probabilistic load forecasts by minimising pinball loss on the simplex, one series at a time.
+This literature trains single models or combines forecasts for one unit; it does not exploit cross-sectional structure when many heterogeneous units face related decisions.
+
+\paragraph{Latent group structures.}
+Panel econometrics models unobserved heterogeneity through latent groups estimated by $k$-means-type algorithms \citep{LinNg2012,BonhommeManresa2015,AndoBai2016} or classifier-Lasso \citep{Su2016}.
+These methods group \emph{regression parameters} under squared loss and focus on the parameters themselves, not on combining the outputs of existing forecasting systems under an asymmetric decision loss.
+
+\paragraph{The gap.}
+Table~\ref{tab:gap} summarises the position of GDMA.
+No existing method simultaneously (a) combines a library of existing candidate rules, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares statistical strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery.
+Filling this gap matters most when windows are short---because systems change and old data are stale---and units are many, which is exactly the situation of system-wide infrastructure planning.
+
+\begin{table}[t]
+\centering
+\caption{Positioning of GDMA relative to existing approaches.}\label{tab:gap}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & Combines & Decision- & Shares strength & Heterogeneous \\
+Approach & candidates & focused loss & across units & weights \\
+\midrule
+Per-series combination / JMA / forward validation & \checkmark & & & \checkmark \\
+Pooled combination & \checkmark & & \checkmark & \\
+Quantile / general-loss model averaging & \checkmark & \checkmark & & \checkmark \\
+Shrinkage towards equal or pooled weights & \checkmark & & partial & \checkmark \\
+Feature-based weights (FFORMA) & \checkmark & & \checkmark & \checkmark \\
+Data-driven newsvendor / predict-then-optimise & & \checkmark & \checkmark & \\
+Latent-group panel models & & & \checkmark & \checkmark \\
+\textbf{GDMA (this paper)} & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}

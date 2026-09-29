@@ -1,0 +1,18 @@
+\section{Managerial implications and conclusion}\label{sec:conclusion}
+
+\paragraph{Implications for system planners.}
+Three lessons emerge for organisations that coordinate many operating units---grid coordinators and regulators, but also national health systems allocating capacity across regions or humanitarian agencies pre-positioning supplies across countries.
+First, the object to be learned is the \emph{decision rule}, not the forecast: the cost-minimising combination of forecasting systems depends on the cost asymmetry each unit faces, so a combination tuned for accuracy leaves money on the table.
+Second, planners need not choose between a single national rule and a bespoke rule for every unit.
+A handful of data-driven segments captures the heterogeneity that matters, is estimated with far less noise than unit-specific rules, and produces a segmentation that can be discussed with operators and regulators---who is grouped with whom, and why.
+Third, because GDMA only re-weights rules that operators already produce, it can be adopted without replacing existing forecasting systems, and each unit's commitment remains a convex combination of commitments it already understands.
+
+\paragraph{Limitations and extensions.}
+Our cost calibration is stylised: shortfall costs are tied to a transparent proxy of import flexibility rather than to market prices, and the single-period newsvendor abstracts from ramping, network constraints and multi-day commitments.
+The timing assumption that the previous day's demand is fully observed before commitment is generous to persistence-type candidates, although all combination methods share the same information.
+The theory treats the number of segments as given and relies on a high-level concentration condition; a formal analysis of the hold-out choice of $G$, and of strong cross-sectional dependence through common weather shocks, is left for future work.
+Natural extensions include segment-specific weights that vary smoothly with observable states, coupling constraints across units (for example shared reserve pools), and distributionally robust versions of~\eqref{eq:gdma} for periods of rapid structural change.
+
+\paragraph{Conclusion.}
+Grouped decision-focused model averaging combines three ideas that have so far developed separately---optimal model averaging, decision-focused learning and latent group structures---into one estimator with finite-sample and asymptotic guarantees.
+It gives system planners a principled way to combine the many forecasts they already have into commitment rules that are cheaper, statistically stable and interpretable.

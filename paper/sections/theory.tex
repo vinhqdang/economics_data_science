@@ -1,0 +1,92 @@
+\section{Theoretical properties}\label{sec:theory}
+
+This section studies the global minimiser of~\eqref{eq:gdma} for a given $G$.
+We show that (i) its expected decision cost is close to that of the best grouped policy, with an estimation error that separates the price of learning memberships from the price of learning weights; (ii) it is asymptotically optimal and, under a latent segment structure, attains the risk of the infeasible unit-specific oracle; and (iii) it recovers the segments with probability approaching one, in which case its weights coincide with those of an estimator that is told the segments.
+Proofs are in Appendix~\ref{app:proofs}.
+
+\subsection{Setting and assumptions}
+
+Let $\bm z_{it}=(y_{it},\bm q_{it})$.
+Define the population risk of unit $i$, $R_i(\bm w)=\mathbb E\,C_i(\bm q_{it}^\top\bm w,y_{it})$, and for a grouped policy $(\bm\gamma,\bm W)$ the average risk and its empirical analogue
+\[
+R(\bm\gamma,\bm W)=\frac1N\sum_{i=1}^N R_i(\bm w_{\gamma_i}),\qquad
+\widehat R(\bm\gamma,\bm W)=\frac1{NT}\sum_{i=1}^N\sum_{t=1}^T C_i(\bm q_{it}^\top\bm w_{\gamma_i},y_{it}).
+\]
+Let $\mathcal P_G=\{1,\dots,G\}^N\times\Delta_M^G$ and $R^*_G=\inf_{\mathcal P_G}R$.
+
+\begin{assumption}[Stationarity and boundedness]\label{as:bounded}
+For each $i$, $\{\bm z_{it}\}_t$ is strictly stationary, $|y_{it}|\le B$ and $\|\bm q_{it}\|_\infty\le B$ almost surely, and $\max_i(u_i+o_i)\le\bar a$.
+\end{assumption}
+
+Stationarity refers to the candidate commitments as well as demand; it holds, for instance, when every candidate is computed from a rolling window of fixed length of a stationary process.
+Boundedness is natural once demand is normalised by a unit's scale.
+Under Assumption~\ref{as:bounded} each loss lies in $[0,L]$ with $L=2\bar aB$ and is Lipschitz in the weights: $|C_i(\bm q^\top\bm w,y)-C_i(\bm q^\top\bm w',y)|\le\bar aB\|\bm w-\bm w'\|_1$.
+
+\begin{assumption}[Concentration]\label{as:concentration}
+There are constants $c>0$ and an effective sample length $T_e\le T$ such that, for every fixed $(\bm\gamma,\bm W)\in\mathcal P_G$ and every $x>0$,
+\[
+\Pr\big(|\widehat R(\bm\gamma,\bm W)-R(\bm\gamma,\bm W)|>x\big)\le 2\exp\!\big(-c\,N T_e\,x^2/L^2\big),
+\]
+and, for every $i$ and fixed $\bm w$, $\Pr(|\widehat R_i(\bm w)-R_i(\bm w)|>x)\le 2\exp(-c\,T_e\,x^2/L^2)$.
+\end{assumption}
+
+Assumption~\ref{as:concentration} is a high-level condition.
+It holds with $T_e=T$ when observations are independent (Hoeffding's inequality) and, when units are independent and each $\{\bm z_{it}\}_t$ is geometrically $\beta$-mixing, with $T_e=T/(C\log T)$ by the blocking argument of \citet{Yu1994} or the Bernstein inequality of \citet{Merlevede2011}.
+Cross-sectional dependence through common shocks (weather, in our application) reduces the effective number of independent units; the results continue to hold with $N$ replaced by an effective cross-sectional size.
+
+\subsection{An oracle inequality}
+
+\begin{theorem}[Oracle inequality]\label{thm:oracle}
+Let Assumptions~\ref{as:bounded}--\ref{as:concentration} hold and let $(\widehat{\bm\gamma},\widehat{\bm W})$ be a global minimiser of~\eqref{eq:gdma}.
+For any $\delta\in(0,1)$, with probability at least $1-\delta$,
+\begin{equation}\label{eq:oracle}
+R(\widehat{\bm\gamma},\widehat{\bm W})\le R^*_G+2L\sqrt{\frac{GM\log(3NT_e)+N\log G+\log(2/\delta)}{c\,NT_e}}+\frac{4\bar aB}{NT_e}.
+\end{equation}
+\end{theorem}
+
+The square-root term has a transparent decomposition.
+Per unit, learning the segment membership costs $\log G/T_e$, while learning the segment weights costs $GM\log(NT_e)/(NT_e)$.
+The same argument applied to unit-specific weights ($G=N$) gives $M\log(NT_e)/T_e$, and applied to pooled weights ($G=1$) gives $M\log(NT_e)/(NT_e)$ but a larger approximation error $R^*_1-R^*_N$.
+Grouping therefore replaces the $M$ per-unit parameters of unit-specific weights by a single discrete label that costs $\log G$ rather than $M\log(NT_e)$ to learn.
+This is the formal sense in which GDMA resolves the tension between the noise of unit-specific weights and the bias of pooled weights: with $M=7$ candidates, $N=46$ units, $G=4$ segments and an effective length of $T_e=28$ (one observation per day of a four-week window), the variance proxy under the square root is $0.23$ for GDMA against $2.07$ for unit-specific weights, so the bound is about three times tighter, while the approximation error of GDMA is zero whenever the segment structure is correct.
+
+\subsection{Asymptotic optimality}
+
+Following the model-averaging literature \citep{Hansen2007,HansenRacine2012,ZhangLiu2023}, call a weight choice asymptotically optimal if the ratio of its risk to the lowest attainable risk in its class tends to one.
+
+\begin{corollary}[Asymptotic optimality]\label{cor:ao}
+Let the assumptions of Theorem~\ref{thm:oracle} hold, with $G$ and $M$ possibly growing, and suppose $R^*_G\ge\kappa>0$.
+If $GM\log(NT_e)/(NT_e)\to0$ and $\log G/T_e\to0$, then
+$R(\widehat{\bm\gamma},\widehat{\bm W})/R^*_G\to_p1$.
+If, in addition, there are memberships $\bm\gamma^0$ with $G_0\le G$ segments such that $\arg\min_{\bm w}R_i(\bm w)$ depends on $i$ only through $\gamma^0_i$, then $R^*_G=R^*_N=N^{-1}\sum_i\min_{\bm w}R_i(\bm w)$ and
+\[
+\frac{R(\widehat{\bm\gamma},\widehat{\bm W})}{N^{-1}\sum_{i}\min_{\bm w\in\Delta_M}R_i(\bm w)}\to_p1 .
+\]
+\end{corollary}
+
+The second statement is the relevant one for practice: under a segment structure, GDMA attains the risk of the infeasible benchmark in which every unit knows its own optimal weights, although it estimates only $G(M-1)$ continuous parameters.
+Unit-specific weights attain the same limit only if $M\log(NT_e)/T_e\to0$, a much stronger requirement when windows are short because the system is non-stationary and old data are of limited use.
+The condition $R^*_G\ge\kappa$ excludes the degenerate case of perfect foresight, which never occurs in commitment problems.
+
+\subsection{Recovery of the segments}
+
+\begin{assumption}[Segment structure]\label{as:groups}
+(a) There are $\bm\gamma^0\in\{1,\dots,G\}^N$ and distinct $\bm w^0_1,\dots,\bm w^0_G\in\Delta_M$ such that, for all $i$ and all $\bm w\in\Delta_M$, $R_i(\bm w)-R_i(\bm w^0_{\gamma^0_i})\ge\lambda\|\bm w-\bm w^0_{\gamma^0_i}\|_2^2$ for some $\lambda>0$.
+(b) $\min_{g\ne h}\|\bm w^0_g-\bm w^0_h\|_2\ge d>0$ and every segment contains at least $\pi N$ units, $\pi>0$.
+\end{assumption}
+
+Part~(a) is a quadratic-growth condition.
+It holds when the conditional density of demand given the candidates is bounded away from zero near the optimal commitment and the candidates are not collinear, because the Hessian of $R_i$ is then $(u_i+o_i)\,\mathbb E[f_{y|\bm q}(\bm q^\top\bm w)\,\bm q\bm q^\top]$, which is positive definite on the tangent space of the simplex.
+Part~(b) requires segments to be genuinely different and non-negligible, as in \citet{BonhommeManresa2015}.
+
+\begin{theorem}[Segment recovery and oracle equivalence]\label{thm:recovery}
+Let Assumptions~\ref{as:bounded}--\ref{as:groups} hold with $G$ equal to the true number of segments, and let $N,T_e\to\infty$ with $\log N/T_e\to0$.
+Then, up to a relabelling of segments,
+(i) $\max_g\|\widehat{\bm w}_g-\bm w^0_g\|_2\to_p0$;
+(ii) $\Pr(\widehat{\bm\gamma}\ne\bm\gamma^0)\le N\,C_M\exp(-c'T_e)+o(1)\to0$ for constants $C_M,c'>0$ that do not depend on $N$ or $T$;
+(iii) with probability approaching one, $\widehat{\bm W}$ equals the infeasible estimator $\widetilde{\bm W}=\arg\min_{\bm W}\widehat R(\bm\gamma^0,\bm W)$ that knows the segments.
+\end{theorem}
+
+Part~(iii) is an exact equivalence, not an asymptotic approximation: on the event that memberships are recovered, the joint minimiser and the known-segment minimiser are the same object.
+Any distributional result available for the known-segment estimator therefore transfers to GDMA without modification.
+The recovery condition $\log N/T_e\to0$ is mild: the number of units may grow polynomially in the window length.

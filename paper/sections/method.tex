@@ -1,0 +1,84 @@
+\section{Grouped decision-focused model averaging}\label{sec:method}
+
+\subsection{The system-wide commitment problem}
+
+A planner is responsible for $N$ decision units (in our application the balancing authorities of the U.S.\ grid).
+In period $t$ unit $i$ must commit a quantity $q_{it}$ before demand $y_{it}$ is realised.
+Committing too little costs $u_i>0$ per unit of shortfall (emergency purchases, reserve activation or, in the limit, curtailed load); committing too much costs $o_i>0$ per unit of excess (idle capacity that was paid for).
+The period cost is the newsvendor cost
+\begin{equation}\label{eq:cost}
+C_i(q,y)=u_i\,(y-q)^+ + o_i\,(q-y)^+ = (u_i+o_i)\,\rho_{\tau_i}(y-q),\qquad \tau_i=\frac{u_i}{u_i+o_i},
+\end{equation}
+where $\rho_\tau(r)=r(\tau-\mathbb 1\{r<0\})$ is the check function.
+The system cost that the planner cares about is $\sum_i\sum_t C_i(q_{it},y_{it})$; under~\eqref{eq:cost} the cost-minimising commitment is the conditional $\tau_i$-quantile of demand \citep{Gneiting2011}.
+Critical ratios $\tau_i$ differ across units because the consequences of a shortfall differ: an operator that is tightly interconnected with its neighbours can import at moderate cost, while an isolated one cannot.
+
+For every unit a library of $M$ candidate commitment rules is available.
+Candidate $m$ proposes $q^{(m)}_{it}$, computed from information available before period $t$; we write $\bm q_{it}=(q^{(1)}_{it},\dots,q^{(M)}_{it})^\top$.
+The candidates may come from any source: an operator's own published forecast, simple persistence rules, statistical models or machine-learning models, each turned into a commitment by adding its own $\tau_i$-quantile residual margin.
+The planner combines them linearly,
+\[
+q_{it}(\bm w)=\bm q_{it}^\top\bm w,\qquad \bm w\in\Delta_M=\Big\{\bm w\in\mathbb R^M:\ w_m\ge 0,\ \textstyle\sum_m w_m=1\Big\}.
+\]
+The simplex constraint keeps the combined commitment inside the range spanned by the candidates, which is what makes the combination interpretable and auditable by operators, and it is known to stabilise estimated weights \citep{Zou2025weights}.
+
+\subsection{Three ways to estimate the weights}
+
+Let the estimation window contain periods $t=1,\dots,T$ for which both candidate commitments and realised demand are observed (a forward-validation sample in the terminology of \citealp{ZhangZhang2023}).
+Write $\widehat R_i(\bm w)=T^{-1}\sum_{t=1}^T C_i(\bm q_{it}^\top\bm w,y_{it})$ for the empirical cost of unit $i$.
+
+\paragraph{Unit-specific weights.} $\widehat{\bm w}_i=\arg\min_{\bm w\in\Delta_M}\widehat R_i(\bm w)$.
+This respects heterogeneity but estimates $M-1$ free parameters from $T$ serially dependent observations per unit; it is the decision-focused counterpart of per-series forecast combination, and suffers from the same estimation noise that underlies the forecast-combination puzzle \citep{SmithWallis2009,Claeskens2016}.
+
+\paragraph{Pooled weights.} $\widehat{\bm w}=\arg\min_{\bm w}\sum_i\widehat R_i(\bm w)$.
+This uses all $NT$ observations but forces a single policy on units that may need different ones.
+
+\paragraph{Grouped weights (proposed).}
+We posit that units fall into a small number $G$ of latent segments whose members are well served by the same combination.
+The GDMA estimator solves
+\begin{equation}\label{eq:gdma}
+(\widehat{\bm\gamma},\widehat{\bm W})=\arg\min_{\bm\gamma\in\{1,\dots,G\}^N,\ \bm W=(\bm w_1,\dots,\bm w_G)\in\Delta_M^G}\ \sum_{i=1}^N\sum_{t=1}^T C_i\big(\bm q_{it}^\top\bm w_{\gamma_i},\,y_{it}\big),
+\end{equation}
+and unit $i$ commits $\bm q_{i,T+1}^\top\widehat{\bm w}_{\widehat\gamma_i}$.
+$G=1$ gives pooled weights and $G=N$ gives unit-specific weights, so the number of segments indexes the whole range between the two extremes.
+Three features separate~\eqref{eq:gdma} from existing proposals.
+First, the criterion is the decision cost in the planner's own units (money or energy), so units are grouped by \emph{how they should act}, not by how their forecasts look.
+Second, memberships and weights are estimated jointly; a two-step procedure that clusters noisy unit-specific weights and then re-estimates is a natural but inferior alternative (Section~\ref{sec:sim}).
+Third, because each unit keeps its own critical ratio and its own candidate margins, units in one segment share a combination rule but not a commitment level.
+
+\subsection{Computation}
+
+Problem~\eqref{eq:gdma} is a mixed-integer problem, but it has the structure of $k$-means with a non-Euclidean, data-dependent distortion, as in the grouped fixed-effects estimator of \citet{BonhommeManresa2015}.
+Given memberships, the weights of each segment solve a pooled convex problem on the simplex; given weights, each unit joins the segment whose weights give it the lowest in-window cost.
+Algorithm~\ref{alg:gdma} alternates the two steps.
+The weight step is a linear program; for speed we minimise a softplus-smoothed check function,
+$\rho^\varepsilon_\tau(r)=\tau r+\varepsilon\log(1+e^{-r/\varepsilon})$, with bandwidth $\varepsilon$ equal to $2\%$ of the unit's typical decision error, by sequential quadratic programming.
+On our data the smoothed solution is within $0.01\%$ of the exact linear-programming optimum in cost.
+Each iteration weakly decreases the objective, so the algorithm converges to a local solution in finitely many steps; we run several starts and keep the best.
+Starting values are drawn by a $k$-means++ rule \citep{ArthurVassilvitskii2007} in \emph{regret space}: the next seed unit is drawn with probability proportional to the extra cost that units would incur if forced to use the closest existing seed's own weights.
+In rolling applications the memberships of the previous window provide an additional warm start.
+
+\begin{algorithm}[t]
+\caption{GDMA for a fixed number of segments $G$}\label{alg:gdma}
+\begin{algorithmic}[1]
+\Require candidate commitments $\{\bm q_{it}\}$, demand $\{y_{it}\}$, costs $\{u_i,o_i\}$, $G$, number of starts $S$
+\State compute unit-specific weights $\widehat{\bm w}_i$ and the regret matrix $D_{ij}=\widehat R_i(\widehat{\bm w}_j)-\widehat R_i(\widehat{\bm w}_i)$
+\For{$s=1,\dots,S$}
+  \State draw seeds $j_1,\dots,j_G$ by $k$-means++ on $D$ and set $\bm w_g\gets\widehat{\bm w}_{j_g}$
+  \Repeat
+    \State $\gamma_i\gets\arg\min_g\widehat R_i(\bm w_g)$ for all $i$ \Comment{assignment step}
+    \State re-seed any empty segment with the unit of largest regret
+    \State $\bm w_g\gets\arg\min_{\bm w\in\Delta_M}\sum_{i:\gamma_i=g}\widehat R_i(\bm w)$ for all $g$ \Comment{pooled convex step}
+  \Until{memberships do not change}
+\EndFor
+\State \Return the solution with the lowest objective~\eqref{eq:gdma}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Choosing the number of segments}
+
+We split the estimation window into an early block (the first two thirds) and a late block.
+For each $G\in\{1,\dots,G_{\max}\}$ we estimate~\eqref{eq:gdma} on the early block and record every unit's cost on the late block under its estimated membership and weights.
+Let $G^\dagger$ minimise the total late-block cost.
+Following the one-standard-error rule \citep{HastieTibshiraniFriedman2009}, we choose the smallest $G$ whose total late-block cost exceeds that of $G^\dagger$ by no more than one standard error of the summed unit-level cost differences, and then re-estimate on the full window.
+The rule respects time order and prefers parsimonious segmentations, which are easier to explain to the operators who would have to adopt them.
