@@ -75,6 +75,20 @@ In rolling applications the memberships of the previous window provide an additi
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{Soft segments}\label{sec:soft}
+
+Segments need not be exact.
+When units within a segment are similar but not identical, a unit may benefit from a rule that sits between its own estimated weights and those of its segment.
+\emph{Soft GDMA} uses
+\begin{equation}\label{eq:soft}
+\widehat{\bm w}^{\,\mathrm{soft}}_i=(1-\kappa)\,\widehat{\bm w}_i+\kappa\,\widehat{\bm w}_{\widehat\gamma_i},\qquad\kappa\in[0,1],
+\end{equation}
+where $\widehat{\bm w}_i$ are the unit-specific weights and $\widehat{\bm w}_{\widehat\gamma_i}$ the GDMA weights of the unit's segment.
+Because the simplex is convex, $\widehat{\bm w}^{\,\mathrm{soft}}_i\in\Delta_M$.
+The family nests every benchmark: $\kappa=1$ is GDMA, $\kappa=0$ is unit-specific weights, $G=1$ is shrinkage towards pooled weights (a decision-focused analogue of \citealp{DieboldShin2019}), and $G=1,\kappa=1$ is pooled weights.
+The pair $(G,\kappa)$ is chosen jointly by the hold-out described next, over $G\in\{1,\dots,G_{\max}\}$ and $\kappa\in\{0,0.25,0.5,0.75,1\}$.
+Segment centres play the role of data-driven prior means, in the spirit of empirical Bayes shrinkage towards group-specific targets.
+
 \subsection{Choosing the number of segments}
 
 We split the estimation window into an early block (the first two thirds) and a late block.
@@ -82,3 +96,4 @@ For each $G\in\{1,\dots,G_{\max}\}$ we estimate~\eqref{eq:gdma} on the early blo
 Let $G^\dagger$ minimise the total late-block cost.
 Following the one-standard-error rule \citep{HastieTibshiraniFriedman2009}, we choose the smallest $G$ whose total late-block cost exceeds that of $G^\dagger$ by no more than one standard error of the summed unit-level cost differences, and then re-estimate on the full window.
 The rule respects time order and prefers parsimonious segmentations, which are easier to explain to the operators who would have to adopt them.
+For soft GDMA we simply take the pair $(G,\kappa)$ with the lowest late-block cost.

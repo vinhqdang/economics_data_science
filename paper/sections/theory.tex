@@ -90,3 +90,11 @@ Then, up to a relabelling of segments,
 Part~(iii) is an exact equivalence, not an asymptotic approximation: on the event that memberships are recovered, the joint minimiser and the known-segment minimiser are the same object.
 Any distributional result available for the known-segment estimator therefore transfers to GDMA without modification.
 The recovery condition $\log N/T_e\to0$ is mild: the number of units may grow polynomially in the window length.
+
+\paragraph{Soft GDMA.}
+For fixed $(G,\kappa)$, $R_i$ is convex in $\bm w$, so the risk of~\eqref{eq:soft} satisfies
+$R_i(\widehat{\bm w}^{\,\mathrm{soft}}_i)\le(1-\kappa)R_i(\widehat{\bm w}_i)+\kappa R_i(\widehat{\bm w}_{\widehat\gamma_i})$.
+Averaging over units, the excess risk of soft GDMA is at most the $\kappa$-weighted average of the excess risks of unit-specific weights and of GDMA, each controlled by Theorem~\ref{thm:oracle}.
+Under a segment structure, therefore, any $\kappa$ bounded away from zero inherits the faster rate of GDMA for the $\kappa$ share of the combination, while $\kappa<1$ buys robustness when segments are only approximate.
+Choosing $(G,\kappa)$ from a finite grid by hold-out adds only a $\log(|\mathcal G|)$ term to the hold-out error, where $|\mathcal G|$ is the grid size.
+
