@@ -106,11 +106,12 @@ We link the two with a two-stage design.
 In the operational stage, the learned rule leaves each unit with hourly shortfalls $s_{it}=(y_{it}-q_{it})^+$ and surpluses $x_{it}=(q_{it}-y_{it})^+$.
 In the planning stage, a battery with power $P_i$ (MW) and energy $\bar h P_i$ (MWh) installed in unit $i$ discharges to cover shortfalls and recharges from committed-but-unused capacity, which has already been paid for.
 With state of charge $e_{it}$ and round-trip efficiency $\eta$, the chronological dispatch is
-\[
-d_{it}=\min\{P_i,s_{it},e_{it}\},\qquad c_{it}=\min\{P_i,x_{it},(\bar hP_i-e_{it}+d_{it})/\eta\},\qquad e_{i,t+1}=e_{it}-d_{it}+\eta c_{it},
-\]
+\begin{gather*}
+d_{it}=\min\{P_i,\,s_{it},\,e_{it}\},\qquad c_{it}=\min\{P_i,\,x_{it},\,(\bar hP_i-e_{it}+d_{it})/\eta\},\\
+e_{i,t+1}=e_{it}-d_{it}+\eta\, c_{it},
+\end{gather*}
 and every MWh discharged avoids the underage cost $u_i$.
-The annual value $V_i(P)=u_i\,\mathbb E\big[\sum_{t\in\text{year}}d_{it}(P)\big]$ is non-decreasing and typically concave in $P$, because each additional MW of power is called on only in rarer and larger shortfalls; where the estimated curve is not concave on the grid we replace later increments by the running minimum of the marginal values, which yields a concave lower bound.
+The annual value of battery power, $V_i(P)$, equal to $u_i$ times the expected energy discharged per year, is non-decreasing and typically concave in $P$, because each additional MW of power is called on only in rarer and larger shortfalls; where the estimated curve is not concave on the grid we replace later increments by the running minimum of the marginal values, which yields a concave lower bound.
 Given an annualised cost $\kappa$ per MW of battery power, the planner solves
 \begin{equation}\label{eq:siting}
 \max_{P_1,\dots,P_N\ge0}\ \sum_{i=1}^N\big\{V_i(P_i)-\kappa P_i\big\}\quad\text{subject to}\quad\sum_{i=1}^N P_i\le B,

@@ -56,7 +56,8 @@ Unlike GDMA, it can let weights vary continuously with observed conditions; like
 \begin{table}[t]
 \centering
 \caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026), relative to the single best forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:global}
-\small
+\footnotesize
+\setlength{\tabcolsep}{4pt}
 \input{tables/global_main.tex}
 \par\smallskip\footnotesize $^a$ The operator's official forecast where one is published (United States), otherwise the global LightGBM forecast.
 \end{table}
@@ -82,7 +83,7 @@ The gain from segments in this phase is thus modest; what the entry experiment s
 \begin{table}[t]
 \centering
 \caption{Commitment cost of areas entering the panel, relative to the single best forecaster ($W=28$).}\label{tab:entry}
-\small
+\footnotesize
 \input{tables/global_entry.tex}
 \par\smallskip\footnotesize $^b$ The first eight weeks after an area has at least one day of data in the estimation window.
 \end{table}
