@@ -60,6 +60,33 @@ def calibrate_costs(flex, tau_spec):
     return tau / (1 - tau), np.ones(N), tau
 
 
+def load_global(tau_spec, with_chronos=True):
+    """Global panel with (optionally) the Chronos candidate appended, the cost
+    parameters and the candidate commitments (cached on disk per tau_spec)."""
+    d = np.load(os.path.join(ROOT, "data", "processed", "global_panel.npz"), allow_pickle=True)
+    Y, F = d["Y"].astype(float), d["F"].astype(float)
+    methods = list(d["methods"])
+    cp = os.path.join(ROOT, "data", "processed", "global_chronos.npy")
+    if with_chronos and os.path.exists(cp):
+        C = np.load(cp).astype(float)
+        with np.errstate(all="ignore"):
+            fill = np.nanmean(F, axis=0)
+        C = np.where(np.isfinite(C), C, fill)
+        C[~np.isfinite(F[0])] = np.nan
+        F = np.concatenate([F, C[None]], axis=0)
+        methods.append("Chronos")
+    first = int(d["first_day"])
+    u, o, tau = calibrate_costs(d["flex"], tau_spec)
+    pp = os.path.join(ROOT, "data", "processed", f"global_policies_{len(methods)}_{tau_spec}.npy")
+    if os.path.exists(pp):
+        P = np.load(pp).astype(float)
+    else:
+        P = fast_candidate_policies(Y, F, tau, first)
+        np.save(pp, P)
+        P = P.astype(float)
+    return d, Y, F, P, u, o, tau, methods, first
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--window", type=int, default=28)
@@ -68,12 +95,9 @@ def main():
     args = ap.parse_args()
     tag = f"global_w{args.window}_tau{args.tau}"
 
-    d = np.load(os.path.join(ROOT, "data", "processed", "global_panel.npz"), allow_pickle=True)
-    Y, F = d["Y"].astype(float), d["F"].astype(float)
-    first = int(d["first_day"])
+    d, Y, F, P, u, o, tau, cand, first = load_global(args.tau)
     M, N, Dn, H = F.shape
-    u, o, tau = calibrate_costs(d["flex"], args.tau)
-    P = fast_candidate_policies(Y, F, tau, first).astype(float)
+    print("candidates:", cand, flush=True)
     with np.errstate(all="ignore"):
         scale = np.nanmean(Y, axis=(1, 2))
 
@@ -168,7 +192,8 @@ def main():
                         labels=np.array(hist["labels"]), W=np.array(hist["W"]),
                         kappa=np.array(hist["kappa"]), kappa_shrink=np.array(hist["kappa_shrink"]),
                         G_km=np.array(hist["G_km"]), G_fto=np.array(hist["G_fto"]),
-                        active=np.array(hist["active"]), origins=origins)
+                        active=np.array(hist["active"]), origins=origins,
+                        candidates=np.array(cand))
     np.savez_compressed(os.path.join(ROOT, "results", f"orders_{tag}.npz"),
                         orders=orders[keep][:, :, ev, :], methods=np.array(SAVE_ORDERS), eval_days=ev)
     tot = cost.sum(axis=(1, 2, 3))

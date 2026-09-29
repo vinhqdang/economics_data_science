@@ -232,3 +232,5 @@ results/*.log
 results/old/
 results/queue_status.txt
 results/orders_*.npz
+data/processed/*.npy
+results/neuralgate_orders_*.npy
