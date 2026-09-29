@@ -89,8 +89,11 @@ def load_europe(idx):
         if cb:
             x = hourly(pd.concat(cb)[lambda x: ~x.index.duplicated()]).reindex(idx)
             first = s.first_valid_index().year
-            f = float((x.loc[str(first)].quantile(0.95) - x.loc[str(first)].quantile(0.05))
-                      / s.loc[str(first)].mean())
+            xf = x.loc[str(first)]
+            if xf.notna().mean() < 0.5 or (xf.fillna(0) == 0).mean() > 0.5:
+                f = np.nan               # no usable cross-border record
+            else:
+                f = float((xf.quantile(0.95) - xf.quantile(0.05)) / s.loc[str(first)].mean())
         else:
             f = np.nan
         cols.append(s.values)
@@ -104,7 +107,8 @@ def load_aemo(idx):
                  SA1="South Australia", TAS1="Tasmania")
     for reg, name in names.items():
         fs = sorted(glob.glob(os.path.join(RAW, "aemo", f"{reg}_*.csv")))
-        df = pd.concat([pd.read_csv(f, usecols=["SETTLEMENTDATE", "TOTALDEMAND"]) for f in fs])
+        df = pd.concat([pd.read_csv(f, usecols=["SETTLEMENTDATE", "TOTALDEMAND"])
+                        for f in fs if os.path.getsize(f) > 1000])
         # NEM time is UTC+10 without daylight saving; values are period-ending
         t = pd.to_datetime(df["SETTLEMENTDATE"], format="%Y/%m/%d %H:%M:%S") - pd.Timedelta("10h")
         s = pd.Series(df["TOTALDEMAND"].values, index=(t - pd.Timedelta("1min")).dt.tz_localize("UTC"))
@@ -135,13 +139,16 @@ def load_asia_africa(idx):
                     for y in (2023, 2024)])
     tt = pd.to_datetime(th["datetime"], format="%d/%m/%Y %H:%M").dt.floor("h")
     tt = (tt - pd.Timedelta("7h")).dt.tz_localize("UTC")
+    th_codes = dict(north="N", south="S", metropolitan="BKK", central="C", northeast="NE")
     for reg in ["north", "south", "metropolitan", "central", "northeast"]:
         s = pd.Series(th[f"{reg}_demand"].astype(float).values, index=tt)
         s = s[~s.index.duplicated()].reindex(idx)
         cols.append(clean(s, s).values)
-        meta.append(dict(code=f"TH-{reg[:3].upper()}", name=f"Thailand {reg}", continent="Asia", flex=np.nan))
+        meta.append(dict(code=f"TH-{th_codes[reg]}", name=f"Thailand {reg}", continent="Asia", flex=np.nan))
     # Algeria, daily rows of 24 hourly values (hour-ending, local time UTC+1)
     al = pd.read_excel(os.path.join(RAW, "algeria.xlsx"), sheet_name="Feuil1")
+    # the sheet repeats 274 days verbatim; keep one copy of each date
+    al = al.assign(Date=pd.to_datetime(al["Date"])).drop_duplicates("Date").sort_values("Date")
     vals = al.iloc[:, 1:25].values.astype(float).ravel()
     t = (pd.to_datetime(al["Date"]).values[:, None] + np.arange(24) * np.timedelta64(1, "h")).ravel()
     s = pd.Series(vals, index=pd.DatetimeIndex(t).tz_localize("UTC") - pd.Timedelta("1h")).reindex(idx)
