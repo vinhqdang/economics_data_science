@@ -41,12 +41,18 @@ def calibrate_costs(flex, tau_spec):
     return u, o, tau
 
 
+REL_FLOOR = 0.2     # floor of the relative-error denominator, share of mean demand
+
+
 def candidate_policies(Y, F, tau, first):
     """q^{(m)}_{i,d,h} = f^{(m)}_{i,d,h} (1 + Qhat_tau_i(relative residuals of m
-    over days d-28..d-1))."""
+    over days d-28..d-1)).  Relative errors are taken with respect to
+    max(f, REL_FLOOR * mean demand of the BA), so that an implausibly small
+    forecast cannot produce an unbounded margin."""
     M, N, Dn, H = F.shape
     P = np.full(F.shape, np.nan)
-    rel = (Y[None] - F) / np.maximum(F, 1e-6)
+    floor = REL_FLOOR * np.nanmean(Y[:, first:], axis=(1, 2))
+    rel = (Y[None] - F) / np.maximum(F, floor[None, :, None, None])
     for d in range(first + RESID_DAYS, Dn):
         win = rel[:, :, d - RESID_DAYS:d, :].reshape(M, N, -1)
         for i in range(N):
@@ -76,7 +82,8 @@ def fto_orders(F, Y, W, labels, tau, days_win, days_out):
     for i in range(N):
         w = W[labels[i]]
         fc = np.tensordot(w, F[:, i, rd, :], axes=1)
-        rel = ((Y[i, rd, :] - fc) / np.maximum(fc, 1e-6)).ravel()
+        floor = REL_FLOOR * np.nanmean(Y[i])
+        rel = ((Y[i, rd, :] - fc) / np.maximum(fc, floor)).ravel()
         qi = np.nanquantile(rel, tau[i])
         out[i] = np.tensordot(w, F[:, i, days_out, :], axes=1) * (1 + qi)
     return np.maximum(out, 0.0)

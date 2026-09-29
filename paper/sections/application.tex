@@ -35,7 +35,7 @@ Each forecast $f^{(m)}$ becomes a candidate commitment by adding its own safety 
 \[
 q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\,\big\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\big\},
 \]
-where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors of forecast $m$ for BA $i$ over the previous 28 days.
+where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_i\}$ of forecast $m$ for BA $i$ over the previous 28 days; the floor at 20\% of the BA's mean demand $\bar y_i$ prevents an occasional implausibly small forecast from producing an unbounded margin.
 The candidate rules are available from February 2020, so the evaluation period runs from 1 April 2020 to 26 September 2026: 2,342 days, 335 weekly re-estimations and 2.58 billion MWh of demand.
 
 \subsection{Competing methods}

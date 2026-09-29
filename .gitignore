@@ -229,3 +229,4 @@ paper/*.blg
 paper/*.out
 paper/*.toc
 results/*.log
+results/old/
