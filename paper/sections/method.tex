@@ -97,3 +97,28 @@ For each $G\in\{1,\dots,G_{\max}\}$ we estimate~\eqref{eq:gdma} on the early blo
 Let $G^\dagger$ minimise the total late-block cost.
 Following the one-standard-error rule \citep{HastieTibshiraniFriedman2009}, we choose the smallest $G$ whose total late-block cost exceeds that of $G^\dagger$ by no more than one standard error of the summed unit-level cost differences, and then re-estimate on the full window.
 The rule respects time order and prefers parsimonious segmentations, which are easier to explain to the operators who would have to adopt them.
+
+\subsection{From commitment rules to storage siting}\label{sec:siting}
+
+The combination rule is an operational decision, re-estimated every week.
+A planner also faces a slower, capital-intensive decision: where to install new flexible capacity.
+We link the two with a two-stage design.
+In the operational stage, the learned rule leaves each unit with hourly shortfalls $s_{it}=(y_{it}-q_{it})^+$ and surpluses $x_{it}=(q_{it}-y_{it})^+$.
+In the planning stage, a battery with power $P_i$ (MW) and energy $\bar h P_i$ (MWh) installed in unit $i$ discharges to cover shortfalls and recharges from committed-but-unused capacity, which has already been paid for.
+With state of charge $e_{it}$ and round-trip efficiency $\eta$, the chronological dispatch is
+\[
+d_{it}=\min\{P_i,s_{it},e_{it}\},\qquad c_{it}=\min\{P_i,x_{it},(\bar hP_i-e_{it}+d_{it})/\eta\},\qquad e_{i,t+1}=e_{it}-d_{it}+\eta c_{it},
+\]
+and every MWh discharged avoids the underage cost $u_i$.
+The annual value $V_i(P)=u_i\,\mathbb E\big[\sum_{t\in\text{year}}d_{it}(P)\big]$ is non-decreasing and typically concave in $P$, because each additional MW of power is called on only in rarer and larger shortfalls; where the estimated curve is not concave on the grid we replace later increments by the running minimum of the marginal values, which yields a concave lower bound.
+Given an annualised cost $\kappa$ per MW of battery power, the planner solves
+\begin{equation}\label{eq:siting}
+\max_{P_1,\dots,P_N\ge0}\ \sum_{i=1}^N\big\{V_i(P_i)-\kappa P_i\big\}\quad\text{subject to}\quad\sum_{i=1}^N P_i\le B,
+\end{equation}
+where $B$ is a storage budget or deployment target (for example a national or continental procurement programme).
+Because each (concavified) $V_i$ is concave, a greedy algorithm that adds power in small increments to the unit with the highest marginal value is optimal for~\eqref{eq:siting}; without the budget constraint, each unit simply installs power until its marginal value falls to $\kappa$.
+We estimate $V_i$ on a grid of battery sizes from the out-of-sample shortfall and surplus paths of each commitment rule.
+
+The two stages interact in two ways that matter for management.
+First, better commitment rules shrink the shortfalls that storage must cover, so part of the storage requirement can be met by better forecast combination instead of new hardware; we measure this \emph{storage equivalent} of better forecasting as the battery power that the status-quo rule needs to reach the cost of the better rule without storage.
+Second, the siting decision depends on the rule: batteries placed where the status-quo rule is weakest may be placed where they add little once operations improve.
