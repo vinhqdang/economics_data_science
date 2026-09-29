@@ -7,7 +7,7 @@ For every balancing authority (BA) in the lower 48 states the file reports hourl
 We use the period 1 January 2019 to 26 September 2026 in UTC hours and exclude the fourteen regional aggregates.
 Following \citet{Ruggles2020}, non-positive values and values outside $[0.3,3]$ times a centred seven-day rolling median are treated as missing, and gaps of up to three hours are interpolated.
 We keep BAs with at least 97\% valid demand, at least 93\% valid official forecasts, mean demand above 50\,MW and a median absolute official forecast error below 15\% of median demand.
-Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators, and account for about 95\% of lower-48 demand.
+Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators, and account for 97\% of lower-48 demand.
 Ten BAs are dropped, mostly small systems with long gaps or implausible official forecasts; 0.27\% of the retained BA-hours are missing.
 
 \subsection{Decision problem and cost calibration}
@@ -54,7 +54,7 @@ The last two isolate the value of estimating the combination for the decision ra
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample system-wide commitment cost, 1 April 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:main}
+\caption{Out-of-sample system-wide commitment cost, 1 April 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:main}
 \small
 \input{tables/main.tex}
 \par\smallskip\footnotesize $^a$ Share of the 46 BAs whose own cost is lower than under the official-forecast policy ($W=28$).
@@ -70,7 +70,7 @@ Table~\ref{tab:main} contains the main result.
 \input{tables/secondary.tex}
 \par\smallskip\footnotesize
 $^b$ Each BA's cost divided by its mean hourly demand, averaged over BAs with equal weight, relative to equal weights.
-$^c$ Positive values: the method has higher daily system cost than GDMA.
+$^c$ Diebold--Mariano statistic; positive values: the method has higher daily system cost than soft GDMA.
 \end{table}
 
 \RESULTSSECONDARY
@@ -95,8 +95,8 @@ $^c$ Positive values: the method has higher daily system cost than GDMA.
 
 \begin{table}[t]
 \centering
-\caption{System cost during extreme events relative to the official-forecast policy ($W=28$).}\label{tab:events}
-\footnotesize
+\caption{System cost during extreme events relative to the official-forecast policy ($W=28$): Winter Storm Uri (10--20 February 2021), Winter Storm Elliott (22--27 December 2022) and the heat wave of 15 July--15 August 2023.}\label{tab:events}
+\small
 \input{tables/events.tex}
 \end{table}
 

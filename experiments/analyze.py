@@ -122,7 +122,7 @@ def main():
     tau = res[main_w]["tau"]
     lines = [r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
              r"Method & Scale-free cost$^b$ & Shortfall & DM statistic \\",
-             r" & (rel.\ to EW) & frequency & vs GDMA$^c$ \\", r"\midrule"]
+             r" & (rel.\ to EW) & frequency & vs soft GDMA$^c$ \\", r"\midrule"]
     for m in s.index:
         dm = "--" if not np.isfinite(s.loc[m].dm_t) else f"{s.loc[m].dm_t:.2f}"
         lines.append(f"{LABEL[m]} & {s.loc[m].norm_rel_ew:.4f} & {s.loc[m].short_rate:.3f} & {dm}" + r" \\")
@@ -142,6 +142,9 @@ def main():
         for m in meth:
             cells = []
             for t in cols:
+                if m not in ss[t].index:
+                    cells.append("--")
+                    continue
                 v = ss[t].loc[m].rel_off
                 b = ss[t]["rel_off"].min()
                 cells.append((r"\textbf{%.4f}" % v) if np.isclose(v, b) else f"{v:.4f}")
@@ -157,10 +160,12 @@ def main():
     ev = days[r["eval_days"]]
     k_off = meth.index("Official")
     fig, ax = plt.subplots(figsize=(6.5, 3.0))
-    styles = {"GDMA": ("#1f4e79", "-", 2.0), "Pooled": ("#c55a11", "--", 1.2),
-              "PerBA": ("#548235", ":", 1.4), "FTO-PerBA": ("#7f7f7f", "-.", 1.2),
-              "EW": ("#bf9000", (0, (1, 1)), 1.2)}
+    styles = {"GDMA-soft": ("#1f4e79", "-", 2.0), "GDMA": ("#5b9bd5", "-", 1.0),
+              "Shrink": ("#bf9000", (0, (1, 1)), 1.2), "Pooled": ("#c55a11", "--", 1.2),
+              "PerBA": ("#548235", ":", 1.4), "FTO-PerBA": ("#7f7f7f", "-.", 1.2)}
     for m, (c, ls, lw) in styles.items():
+        if m not in meth:
+            continue
         k = meth.index(m)
         cum = np.cumsum(sysd[k_off] - sysd[k]) / np.cumsum(sysd[k_off])
         ax.plot(ev, 100 * cum, color=c, ls=ls, lw=lw, label=LABEL[m].replace("\\textbf{", "").replace("}", ""))
@@ -203,9 +208,9 @@ def main():
     avgW.to_csv(os.path.join(ROOT, "results", f"avg_weights_{main_w}.csv"))
 
     # ---------------- extreme events ---------------------------------------
-    events = {"Winter Storm Uri (10--20 Feb 2021)": ("2021-02-10", "2021-02-20"),
-              "Winter Storm Elliott (22--27 Dec 2022)": ("2022-12-22", "2022-12-27"),
-              "Heat wave (15 Jul--15 Aug 2023)": ("2023-07-15", "2023-08-15")}
+    events = {"Uri": ("2021-02-10", "2021-02-20"),
+              "Elliott": ("2022-12-22", "2022-12-27"),
+              "Heat wave 2023": ("2023-07-15", "2023-08-15")}
     lines = [r"\begin{tabular}{@{}l" + "c" * len(events) + "@{}}", r"\toprule",
              "Method & " + " & ".join(events) + r" \\", r"\midrule"]
     evs = {}
