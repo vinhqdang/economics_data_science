@@ -98,3 +98,8 @@ Averaging over units, the excess risk of soft GDMA is at most the $\kappa$-weigh
 Under a segment structure, therefore, any $\kappa$ bounded away from zero inherits the faster rate of GDMA for the $\kappa$ share of the combination, while $\kappa<1$ buys robustness when segments are only approximate.
 Choosing $(G,\kappa)$ from a finite grid by hold-out adds only a $\log(|\mathcal G|)$ term to the hold-out error, where $|\mathcal G|$ is the grid size.
 
+
+\paragraph{Weighted and fair criteria.}
+All results of this section hold for criteria in which unit $i$'s costs are multiplied by a weight $\omega_i\in[\underline\omega,\bar\omega]$ with $0<\underline\omega\le\bar\omega<\infty$: the weights only rescale $u_i$ and $o_i$, so Assumptions~\ref{as:bounded}--\ref{as:groups} hold with $\bar a$ replaced by $\bar\omega\bar a$ and $\lambda$ by $\underline\omega\lambda$.
+Fair soft GDMA uses data-dependent weights $\omega_i\propto1/c_i^0$; treating them as fixed within a window, Theorem~\ref{thm:oracle} bounds its weighted excess risk, and because the weights are bounded, the unweighted excess risk is bounded by $\bar\omega/\underline\omega$ times that bound.
+Fairness in this sense therefore costs at most a constant factor in the estimation error and nothing in the rates.

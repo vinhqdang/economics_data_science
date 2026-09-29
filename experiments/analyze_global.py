@@ -19,9 +19,40 @@ LABEL = {"Official": "Single best forecaster$^a$", "EW": "Equal weights", "Selec
          "Pooled": "Pooled DF weights", "PerUnit": "Per-area DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerUnit": "Forecast-then-commit, per area",
          "FTO-Grouped": "Forecast-then-commit, grouped", "NeuralGate": "Neural gate (deep MoE)",
-         "GDMA": "GDMA", "GDMA-soft": "\\textbf{Soft GDMA}"}
+         "GDMA": "GDMA", "GDMA-soft": "\\textbf{Soft GDMA}", "GDMA-fair": "Fair soft GDMA"}
 ORDER = ["Official", "EW", "Select", "Pooled", "PerUnit", "Shrink", "KMeans2S", "FTO-PerUnit",
-         "FTO-Grouped", "NeuralGate", "GDMA", "GDMA-soft"]
+         "FTO-Grouped", "NeuralGate", "GDMA", "GDMA-soft", "GDMA-fair"]
+
+
+def fairness_table(r, path):
+    """Distribution of benefits across grid areas: per-area cost relative to the
+    area's own single best forecaster."""
+    meth = list(r["methods"])
+    C = r["daily_cost"].sum(axis=2)                  # (K, N)
+    k0 = meth.index("Official")
+    ok = C[k0] > 0
+    ratio = C[:, ok] / C[k0, ok][None]
+    cont = r["continent"][ok]
+    years = (r["valid_hours"][ok].sum(axis=1) / 8760.0)
+    poor = years < 2.0
+    lines = [r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",
+             r" & \multicolumn{3}{c}{Per-area cost ratio} & Areas & Worst & Data-rich & Data-poor \\",
+             r"\cmidrule(lr){2-4}",
+             r"Method & P10 & Median & P90 & harmed & continent$^d$ & areas & areas$^e$ \\", r"\midrule"]
+    out = {}
+    for m in [x for x in ORDER if x in meth]:
+        k = meth.index(m)
+        q = np.percentile(ratio[k], [10, 50, 90])
+        harmed = (ratio[k] > 1.0).mean()
+        worst = max(np.median(ratio[k][cont == c]) for c in CONTS if (cont == c).any())
+        rich = C[k, ok][~poor].sum() / C[k0, ok][~poor].sum()
+        pr = C[k, ok][poor].sum() / C[k0, ok][poor].sum()
+        out[m] = dict(p10=q[0], med=q[1], p90=q[2], harmed=harmed, worst=worst, rich=rich, poor=pr)
+        lines.append(f"{LABEL[m]} & {q[0]:.3f} & {q[1]:.3f} & {q[2]:.3f} & {harmed:.2f} & {worst:.3f} & {rich:.3f} & {pr:.3f}" + r" \\")
+    lines += [r"\midrule", f"Areas & & {int(ok.sum())} & & & & {int((~poor).sum())} & {int(poor.sum())}" + r" \\",
+              r"\bottomrule", r"\end{tabular}"]
+    open(path, "w").write("\n".join(lines))
+    return out
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 
 

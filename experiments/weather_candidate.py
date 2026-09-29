@@ -91,8 +91,9 @@ def main():
     def build(days_):
         # operating-day temperature from Tf, previous-day temperature from T
         X, s = design(Y, OF, Tf, days_, month, dow, cont)
-        Xp, _ = design(Y, OF, T, days_, month, dow, cont)
-        X[:, 12] = Xp[:, 12]
+        with np.errstate(all="ignore"):
+            prev = np.nanmean(T[:, days_ - 1, :], axis=2, keepdims=True)
+        X[:, 12] = np.repeat(prev, H, axis=2).reshape(-1)
         return X, s
 
     for d0 in range(first, Dn, LGB_EVERY):

@@ -123,3 +123,26 @@ We estimate $V_i$ on a grid of battery sizes from the out-of-sample shortfall an
 The two stages interact in two ways that matter for management.
 First, better commitment rules shrink the shortfalls that storage must cover, so part of the storage requirement can be met by better forecast combination instead of new hardware; we measure this \emph{storage equivalent} of better forecasting as the battery power that the status-quo rule needs to reach the cost of the better rule without storage.
 Second, the siting decision depends on the rule: batteries placed where the status-quo rule is weakest may be placed where they add little once operations improve.
+
+\subsection{Fairness across decision units}\label{sec:fair}
+
+At continental scale the objective in~\eqref{eq:gdma} has a distributional consequence.
+Because costs are measured in money or energy, the largest systems dominate the criterion, and a segment rule that is excellent for a large system may be mediocre for a small or data-poor one that happens to share its segment.
+The same holds for storage: problem~\eqref{eq:siting} places batteries where the value is highest in absolute terms.
+Energy-justice scholarship stresses that the distribution of the benefits of energy infrastructure matters in its own right \citep{SovacoolDworkin2015}, and the operations literature measures the efficiency cost of fair allocations by the \emph{price of fairness} \citep{Bertsimas2011pof}.
+We therefore add two fair variants and audit every method for how its benefits are distributed.
+
+\paragraph{Fair soft GDMA (one area, one vote).}
+Let $c^0_i$ be the in-window cost of unit $i$ under its single best forecaster.
+Fair soft GDMA solves the soft GDMA problem with every unit's costs divided by $c^0_i$ (normalised to mean one), that is, with $u_i$ and $o_i$ replaced by $\omega_iu_i$ and $\omega_io_i$, $\omega_i\propto1/c^0_i$.
+Each unit then counts in proportion to its \emph{relative} improvement, so that a 10\% saving in a 70\,MW municipal utility weighs as much as a 10\% saving in a 90\,GW regional market.
+This is the relative-cost analogue of group-robust learning \citep{Sagawa2020gdro}; it changes only the weights of the criterion, not the algorithm.
+
+\paragraph{Fair storage siting.}
+We consider two fair versions of~\eqref{eq:siting} over continents $c$ (any grouping, such as countries or income groups, works the same way).
+\emph{Proportional floors} require every continent to receive at least a share $\lambda$ of its share of demand in the budget; the floors are filled greedily within each continent and the rest of the budget greedily across all units.
+\emph{Maximin siting} allocates each increment of battery power to the continent whose relative benefit---the value captured divided by its commitment cost without storage---is currently the lowest, and within it to the unit with the highest marginal value, which implements a max--min notion of fairness \citep{Bertsimas2011pof}.
+The price of fairness is the share of the efficient programme's value that each fair version gives up.
+
+\paragraph{Audit.}
+For every method we report the distribution across units of the ratio of its cost to the unit's own single best forecaster, the share of units made worse off, the median ratio of the worst-served continent, and separate ratios for data-rich and data-poor systems.
