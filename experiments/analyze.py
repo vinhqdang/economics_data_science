@@ -21,7 +21,8 @@ os.makedirs(FIG, exist_ok=True)
 LABEL = {"Official": "Official forecast", "EW": "Equal weights", "Select": "Best single (per BA)",
          "Pooled": "Pooled DF weights", "PerBA": "Per-BA DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerBA": "Forecast-then-commit, per BA",
-         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "\\textbf{GDMA}", "GDMA-min": "GDMA, minimum hold-out rule"}
+         "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "\\textbf{GDMA}", "GDMA-min": "GDMA, minimum hold-out rule",
+         "GDMA-soft": "\\textbf{Soft GDMA}"}
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 
 
@@ -36,6 +37,7 @@ def load(tag):
         r["short_hours"] = np.concatenate([r["short_hours"], v["short_hours"]])
         r["methods"] = np.concatenate([r["methods"], v["methods"]])
         r["G_min"] = v["G"]
+        r["G_soft"], r["kappa_soft"] = v["G_soft"], v["kappa_soft"]
     # BA-days on which any method lacks a commitment (all candidates missing)
     # are dropped for every method so that all methods are scored on the same cells
     bad = np.isnan(r["daily_cost"]).any(axis=0)

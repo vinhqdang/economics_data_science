@@ -15,7 +15,8 @@ import numpy as np
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 from gdma.core import (newsvendor_cost, fit_weights, fit_per_unit, select_grouped,  # noqa: E402
-                       fit_kmeans_two_step, cost_matrix, fit_grouped)
+                       fit_kmeans_two_step, cost_matrix, fit_grouped,
+                       select_soft_grouped)
 
 RESID_DAYS = 28      # window for the residual quantile of each candidate policy
 STEP = 7             # re-estimation frequency (days)
@@ -186,7 +187,8 @@ def main():
 
 
 def run_variants(args, tag):
-    """GDMA with G chosen by the plain hold-out minimum (rule='min')."""
+    """GDMA with G chosen by the plain hold-out minimum (rule='min') and soft
+    GDMA with (G, kappa) chosen jointly by the hold-out."""
     d = np.load(os.path.join(ROOT, "data", "processed", "panel.npz"), allow_pickle=True)
     Y, F = d["Y"].astype(float), d["F"].astype(float)
     first = int(d["first_day"])
@@ -196,9 +198,9 @@ def run_variants(args, tag):
     scale = np.nanmean(Y[:, first:], axis=(1, 2))
     start = first + RESID_DAYS + MAX_WINDOW
     origins = np.arange(start, Dn, STEP)
-    names = ["GDMA-min"]
-    orders = np.full((1, N, Dn, H), np.nan)
-    Gs, prev = [], None
+    names = ["GDMA-min", "GDMA-soft"]
+    orders = np.full((2, N, Dn, H), np.nan)
+    Gs, Gsoft, ksoft, prev, prev2 = [], [], [], None, None
     for n, d0 in enumerate(origins):
         win = np.arange(d0 - args.window, d0)
         out = np.arange(d0, min(d0 + STEP, Dn))
@@ -209,8 +211,15 @@ def run_variants(args, tag):
         prev = g["labels"]
         orders[0][:, out] = np.einsum("mnlh,nm->nlh", Qo, g["W"][g["labels"]])
         Gs.append(g["G"])
+        sg = select_soft_grouped(Q, y, G_MAX, u, o, scale=scale, n_init=args.n_init,
+                                 init_labels=prev2)
+        prev2 = sg["labels"]
+        orders[1][:, out] = np.einsum("mnlh,nm->nlh", Qo, sg["W_units"])
+        Gsoft.append(sg["G"])
+        ksoft.append(sg["kappa"])
         if n % 40 == 0:
-            print(f"[{tag} variants] origin {n + 1}/{len(origins)} G={g['G']}", flush=True)
+            print(f"[{tag} variants] origin {n + 1}/{len(origins)} G={g['G']} "
+                  f"soft G={sg['G']} kappa={sg['kappa']:.2f}", flush=True)
     ev = np.arange(start, Dn)
     yy = Y[:, ev, :]
     valid = np.isfinite(yy)
@@ -219,7 +228,8 @@ def run_variants(args, tag):
     short = np.where(valid[None], orders[:, :, ev, :] < yy[None], False)
     np.savez_compressed(os.path.join(ROOT, "results", f"variants_{tag}.npz"),
                         daily_cost=cost.sum(axis=3), short_hours=short.sum(axis=3),
-                        methods=np.array(names), eval_days=ev, G=np.array(Gs))
+                        methods=np.array(names), eval_days=ev, G=np.array(Gs),
+                        G_soft=np.array(Gsoft), kappa_soft=np.array(ksoft))
     print(f"[{tag} variants] done")
 
 

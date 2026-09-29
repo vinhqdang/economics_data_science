@@ -25,7 +25,8 @@ from sklearn.metrics import adjusted_rand_score
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 from gdma.core import (newsvendor_cost, fit_per_unit, fit_grouped, select_grouped,  # noqa: E402
-                       fit_kmeans_two_step, cost_matrix, fit_weights_exact)
+                       fit_kmeans_two_step, cost_matrix, fit_weights_exact,
+                       select_soft_grouped)
 
 M = 5
 PROFILES_S = np.array([[1.0, 2.0, 2.0, 1.5, 3.0],
@@ -35,7 +36,7 @@ PROFILES_K = np.array([[+1, -1, +1, 0, -1],
                        [-1, +1, 0, -1, +1],
                        [+1, +1, -1, +1, 0]])
 T_TEST, T_PRE = 1000, 200
-METHODS = ["EW", "Pooled", "PerUnit", "Shrink", "KMeans2S", "GDMA", "Oracle"]
+METHODS = ["EW", "Pooled", "PerUnit", "Shrink", "KMeans2S", "GDMA", "GDMA-soft", "Oracle"]
 
 
 def ar1(shape, rho, rng):
@@ -118,11 +119,13 @@ def one_rep(args):
     res["KMeans2S"] = test_cost(km["W"][km["labels"]])
     g = select_grouped(Qa, ya, 6, u, o, scale=scale, n_init=6, seed=rep)
     res["GDMA"] = test_cost(g["W"][g["labels"]])
+    sg = select_soft_grouped(Qa, ya, 6, u, o, scale=scale, n_init=6, seed=rep)
+    res["GDMA-soft"] = test_cost(sg["W_units"])
     # infeasible benchmark: exact per-unit optimum on the test sample itself
     Wor = np.vstack([fit_weights_exact(Qb[i], yb[i], u[i], o[i]) for i in range(N)])
     res["Oracle"] = test_cost(Wor)
     out = {m: res[m] / res["Oracle"] for m in METHODS}
-    out.update(N=N, T=T, design=design, rep=rep, G_hat=g["G"],
+    out.update(N=N, T=T, design=design, rep=rep, G_hat=g["G"], G_soft=sg["G"], kappa=sg["kappa"],
                ARI=adjusted_rand_score(g0, g["labels"]) if design == "grouped" else np.nan,
                ARI_km=adjusted_rand_score(g0, km["labels"]) if design == "grouped" else np.nan,
                secs=time.time() - t0)

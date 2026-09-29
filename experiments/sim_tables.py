@@ -3,8 +3,8 @@ import os
 import pandas as pd
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-METHODS = ["EW", "Pooled", "PerUnit", "Shrink", "KMeans2S", "GDMA"]
-HEAD = ["EW", "Pooled", "Per-unit", "Shrink", "2-step", "GDMA"]
+METHODS = ["EW", "Pooled", "PerUnit", "Shrink", "KMeans2S", "GDMA", "GDMA-soft"]
+HEAD = ["EW", "Pooled", "Per-unit", "Shrink", "2-step", "GDMA", "Soft"]
 
 
 def main():

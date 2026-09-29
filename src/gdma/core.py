@@ -20,7 +20,7 @@ from scipy.optimize import minimize
 __all__ = [
     "newsvendor_cost", "squared_cost", "fit_weights", "cost_matrix",
     "fit_grouped", "select_grouped", "fit_per_unit", "fit_kmeans_two_step",
-    "fit_weights_exact", "error_scale",
+    "fit_weights_exact", "error_scale", "select_soft_grouped",
 ]
 
 
@@ -286,3 +286,32 @@ def fit_kmeans_two_step(Q, Y, G, u=None, o=None, loss="newsvendor", scale=None,
         scale = error_scale(Q, Y)
     W = _group_fit(Q, Y, u, o, labels, G, loss, scale, None)
     return dict(labels=labels, W=W)
+
+
+def select_soft_grouped(Q, Y, G_max, u=None, o=None, loss="newsvendor", scale=None,
+                        frac=2 / 3, n_init=8, seed=0, init_labels=None,
+                        kappas=np.linspace(0.0, 1.0, 5)):
+    """Soft GDMA: unit weights shrunk towards their segment's weights,
+        w_i = (1 - kappa) * w_i^unit + kappa * w_{g_i},
+    with (G, kappa) chosen jointly by the temporal hold-out.  kappa = 1 is GDMA,
+    G = 1 is shrinkage towards pooled weights, kappa = 0 is unit-specific weights.
+    """
+    N, T = Y.shape
+    T1 = max(int(np.ceil(frac * T)), 2)
+    Qa, Ya, Qb, Yb = Q[:, :T1], Y[:, :T1], Q[:, T1:], Y[:, T1:]
+    Wu_a = fit_per_unit(Qa, Ya, u, o, loss, scale)
+    best = (np.inf, 1, 1.0)
+    for G in range(1, G_max + 1):
+        fit = fit_grouped(Qa, Ya, G, u, o, loss, scale, n_init, seed=seed, W_unit=Wu_a)
+        Wg = fit["W"][fit["labels"]]
+        for k in kappas:
+            c = np.diag(cost_matrix(Qb, Yb, (1 - k) * Wu_a + k * Wg, u, o, loss, scale)).sum()
+            if c < best[0]:
+                best = (c, G, k)
+    _, G_star, k_star = best
+    Wu = fit_per_unit(Q, Y, u, o, loss, scale)
+    fit = fit_grouped(Q, Y, G_star, u, o, loss, scale, n_init, seed=seed,
+                      W_unit=Wu, init_labels=init_labels)
+    fit["W_units"] = (1 - k_star) * Wu + k_star * fit["W"][fit["labels"]]
+    fit["G"], fit["kappa"] = G_star, k_star
+    return fit
