@@ -18,14 +18,15 @@ import pandas as pd
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
-from gdma.storage import value_curves, allocate_budget, optimal_sizes  # noqa: E402
+from gdma.storage import value_curves, allocate_budget, optimal_sizes, allocate_with_floors, allocate_maximin  # noqa: E402
 
 TAG = os.environ.get("TAG", "global_w28_taucalibrated")
+SUFFIX = "" if TAG == "global_w28_taucalibrated" else "_" + TAG.replace("global_w28_taucalibrated_", "")
 IDLE_USD = 10.0                 # $ per MWh of idle committed capacity
 BATTERY_USD = [100e3, 150e3, 200e3]   # annualised $ per MW of 4-h battery power
 FRACS = np.array([0, .0025, .005, .01, .015, .02, .03, .04, .05, .06, .08, .10, .12, .15])
 BUDGETS_GW = [1, 5, 10, 20]
-POLICIES = ["Official", "EW", "Pooled", "PerUnit", "FTO-PerUnit", "GDMA", "GDMA-soft"]
+POLICIES = ["Official", "EW", "Pooled", "PerUnit", "FTO-PerUnit", "GDMA", "GDMA-soft", "GDMA-fair"]
 LABEL = {"Official": "Status quo", "EW": "Equal weights", "Pooled": "Pooled DF", "PerUnit": "Per-unit DF",
          "FTO-PerUnit": "Forecast-then-commit", "GDMA": "GDMA", "GDMA-soft": "Soft GDMA",
          "Shrink": "Shrinkage"}
@@ -51,7 +52,8 @@ def main():
     grid = np.outer(scale, FRACS)
 
     curves, base = {}, {}
-    for m in POLICIES:
+    POL = [m for m in POLICIES if m in omethods]
+    for m in POL:
         q = orders[omethods.index(m)]
         yz = np.where(valid, Y, 0.0)
         qz = np.where(valid, q, 0.0)
@@ -66,7 +68,7 @@ def main():
         print("value curves", m, flush=True)
 
     rows = []
-    for m in POLICIES:
+    for m in POL:
         for cost in BATTERY_USD:
             Pm = optimal_sizes(grid, curves[m] * IDLE_USD, cost)
             gain = np.array([np.interp(Pm[i], grid[i], curves[m][i]) for i in range(N)]) * IDLE_USD - cost * Pm
@@ -76,13 +78,13 @@ def main():
                                  net_benefit_musd=gain[k].sum() / 1e6, areas=int((Pm[k] > 0).sum()),
                                  n_areas=int(k.sum())))
     opt = pd.DataFrame(rows)
-    opt.to_csv(os.path.join(ROOT, "results", "storage_optimal.csv"), index=False)
+    opt.to_csv(os.path.join(ROOT, "results", f"storage_optimal{SUFFIX}.csv"), index=False)
 
     # (b) budget allocation and (d) misallocation
     rows = []
     for B in BUDGETS_GW:
-        alloc = {m: allocate_budget(grid[act], curves[m][act], B * 1e3) for m in POLICIES}
-        for m in POLICIES:
+        alloc = {m: allocate_budget(grid[act], curves[m][act], B * 1e3) for m in POL}
+        for m in POL:
             Pm = alloc[m]
             V = curves[m][act]
             g = grid[act]
@@ -97,12 +99,12 @@ def main():
                 row[f"gw_{c}"] = Pm[cont[act] == c].sum() / 1e3
             rows.append(row)
     bud = pd.DataFrame(rows)
-    bud.to_csv(os.path.join(ROOT, "results", "storage_budget.csv"), index=False)
+    bud.to_csv(os.path.join(ROOT, "results", f"storage_budget{SUFFIX}.csv"), index=False)
 
     # (c) storage-equivalent of better forecasting
     target = base["GDMA-soft"][act].sum()
     rows = []
-    for m in POLICIES:
+    for m in POL:
         Bs = np.concatenate([np.linspace(0, 5, 21), np.linspace(6, 60, 55)])
         costs = []
         for B in Bs:
@@ -114,9 +116,45 @@ def main():
         rows.append(dict(policy=m, cost_no_storage_musd=base[m][act].sum() * IDLE_USD / 1e6,
                          gw_to_match_soft=Bs[reach[0]] if len(reach) else np.inf,
                          min_cost_musd=costs.min() * IDLE_USD / 1e6))
-        np.save(os.path.join(ROOT, "results", f"storage_frontier_{m}.npy"), np.vstack([Bs, costs * IDLE_USD / 1e6]))
+        np.save(os.path.join(ROOT, "results", f"storage_frontier{SUFFIX}_{m}.npy"), np.vstack([Bs, costs * IDLE_USD / 1e6]))
     eq = pd.DataFrame(rows)
-    eq.to_csv(os.path.join(ROOT, "results", "storage_equivalent.csv"), index=False)
+    eq.to_csv(os.path.join(ROOT, "results", f"storage_equivalent{SUFFIX}.csv"), index=False)
+
+    # (e) fair siting: every continent receives at least lambda times its share of
+    # demand in the budget; price of fairness = value lost relative to efficiency
+    dem = np.nan_to_num(scale) * act
+    share = {c: dem[cont == c].sum() / dem.sum() for c in CONTS}
+    rows = []
+    Va, ga, ca = curves["GDMA-soft"][act], grid[act], cont[act]
+    for B in BUDGETS_GW:
+        for lam in [0.0, 0.5, 1.0]:
+            floors = {c: lam * share[c] * B * 1e3 for c in CONTS}
+            Pm = allocate_with_floors(ga, Va, B * 1e3, ca, floors)
+            val = np.array([np.interp(Pm[i], ga[i], Va[i]) for i in range(len(Pm))])
+            row = dict(budget_gw=B, floor_lambda=lam, value_musd=val.sum() * IDLE_USD / 1e6)
+            for c in CONTS:
+                row[f"gw_{c}"] = Pm[ca == c].sum() / 1e3
+                row[f"value_{c}"] = val[ca == c].sum() * IDLE_USD / 1e6
+            rows.append(row)
+        # Rawlsian: maximise the minimum relative benefit across continents
+        bc = {c: base["GDMA-soft"][act][ca == c].sum() for c in CONTS if (ca == c).any()}
+        Pm = allocate_maximin(ga, Va, B * 1e3, ca, bc)
+        val = np.array([np.interp(Pm[i], ga[i], Va[i]) for i in range(len(Pm))])
+        row = dict(budget_gw=B, floor_lambda=-1.0, value_musd=val.sum() * IDLE_USD / 1e6)
+        for c in CONTS:
+            row[f"gw_{c}"] = Pm[ca == c].sum() / 1e3
+            row[f"value_{c}"] = val[ca == c].sum() * IDLE_USD / 1e6
+        rows.append(row)
+    fair = pd.DataFrame(rows)
+    # relative benefit of each continent: value captured / its cost without storage
+    for c in CONTS:
+        bc_c = base["GDMA-soft"][act][ca == c].sum() * IDLE_USD / 1e6
+        fair[f"relben_{c}"] = fair[f"value_{c}"] / max(bc_c, 1e-12)
+    base_v = fair[fair.floor_lambda == 0].set_index("budget_gw").value_musd
+    fair["price_of_fairness"] = 1 - fair.value_musd / fair.budget_gw.map(base_v)
+    fair.to_csv(os.path.join(ROOT, "results", f"storage_fair{SUFFIX}.csv"), index=False)
+    pd.Series(share).to_csv(os.path.join(ROOT, "results", f"storage_demand_share{SUFFIX}.csv"))
+    print(fair.round(3).to_string())
 
     # per-area optimal sizes under soft GDMA vs status quo (for the map/table)
     per = pd.DataFrame(dict(code=code, continent=cont, mean_mw=scale, years=years, tau=r["tau"],
@@ -125,7 +163,7 @@ def main():
     # marginal value (USD per MW-year) of the first battery increment
     per["mv1_status_quo"] = curves["Official"][:, 1] / np.maximum(grid[:, 1], 1e-9) * IDLE_USD
     per["mv1_soft"] = curves["GDMA-soft"][:, 1] / np.maximum(grid[:, 1], 1e-9) * IDLE_USD
-    per.to_csv(os.path.join(ROOT, "results", "storage_per_area.csv"), index=False)
+    per.to_csv(os.path.join(ROOT, "results", f"storage_per_area{SUFFIX}.csv"), index=False)
     pd.set_option("display.width", 200)
     print(opt[opt.battery_usd == 150e3].pivot(index="policy", columns="continent", values="gw").round(2))
     print(bud.round(1).to_string())

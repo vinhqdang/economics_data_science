@@ -15,7 +15,8 @@ marginal value is optimal for the budget-constrained problem
 """
 import numpy as np
 
-__all__ = ["battery_dispatch", "value_curves", "allocate_budget", "optimal_sizes"]
+__all__ = ["battery_dispatch", "value_curves", "allocate_budget", "optimal_sizes",
+           "allocate_with_floors"]
 
 
 def battery_dispatch(short, surplus, P, duration=4.0, eta=0.85, soc0=0.5):
@@ -61,19 +62,25 @@ def _concave_increments(grid, V):
     return dP, np.minimum.accumulate(m, axis=1)
 
 
-def allocate_budget(grid, V, budget):
-    """Greedy allocation of `budget` MW of battery power across units."""
+def allocate_budget(grid, V, budget, P0=None, eligible=None):
+    """Greedy allocation of `budget` MW of battery power across units, starting
+    from P0 (default zero) and only adding power to `eligible` units."""
     dP, m = _concave_increments(grid, V)
     N, K1 = m.shape
+    if eligible is not None:
+        m = np.where(eligible[:, None], m, -np.inf)
     order = np.dstack(np.unravel_index(np.argsort(-m, axis=None), m.shape))[0]
-    P = np.zeros(N)
+    P = np.zeros(N) if P0 is None else P0.copy()
+    start = P.copy()
     left = budget
     for i, k in order:
         if left <= 0 or m[i, k] <= 0:
             break
         if P[i] + 1e-9 < grid[i, k]:      # increments must be taken in order
             continue
-        step = min(dP[i, k], left)
+        if P[i] >= grid[i, k + 1] - 1e-9:  # increment already taken (warm start)
+            continue
+        step = min(grid[i, k + 1] - P[i], left)
         P[i] += step
         left -= step
     return P
@@ -87,4 +94,54 @@ def optimal_sizes(grid, V, cost_per_mw):
     # increments are taken in order, so stop at the first unprofitable step
     first_bad = np.where((~take).any(axis=1), (~take).argmax(axis=1), take.shape[1])
     P = np.array([dP[i, :first_bad[i]].sum() for i in range(len(first_bad))])
+    return P
+
+
+def allocate_with_floors(grid, V, budget, groups, floors):
+    """Budget allocation in which every group g (e.g. a continent) receives at
+    least floors[g] MW: each floor is first filled greedily within its group,
+    then the remaining budget is allocated greedily across all units."""
+    P = np.zeros(grid.shape[0])
+    used = 0.0
+    for g, f in floors.items():
+        f = min(f, budget - used)
+        if f <= 0:
+            continue
+        P = allocate_budget(grid, V, f, P0=P, eligible=(groups == g))
+        used = P.sum()
+    return allocate_budget(grid, V, budget - used, P0=P)
+
+
+def allocate_maximin(grid, V, budget, groups, base_cost):
+    """Rawlsian (maximin) siting across groups: the next increment of power goes
+    to the group whose relative benefit (value captured / its commitment cost
+    without storage) is currently the lowest, and within that group to the
+    unit with the highest marginal value."""
+    dP, m = _concave_increments(grid, V)
+    N = grid.shape[0]
+    P = np.zeros(N)
+    step_idx = np.zeros(N, dtype=int)            # next increment of each unit
+    gvals = {g: 0.0 for g in base_cost}
+    left = budget
+    while left > 1e-9:
+        cand = {}
+        for g in base_cost:
+            idx = np.flatnonzero(groups == g)
+            idx = idx[step_idx[idx] < m.shape[1]]
+            if len(idx) == 0:
+                continue
+            mm = m[idx, step_idx[idx]]
+            j = int(np.argmax(mm))
+            if mm[j] > 0:
+                cand[g] = idx[j]
+        if not cand:
+            break
+        g = min(cand, key=lambda k: gvals[k] / max(base_cost[k], 1e-12))
+        i = cand[g]
+        k = step_idx[i]
+        step = min(dP[i, k], left)
+        gvals[g] += m[i, k] * step
+        P[i] += step
+        left -= step
+        step_idx[i] += 1
     return P

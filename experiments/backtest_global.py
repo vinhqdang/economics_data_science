@@ -23,8 +23,9 @@ from backtest import (candidate_policies, window_arrays, fto_orders, RESID_DAYS,
                       STEP, G_MAX)
 
 METHOD_NAMES = ["Official", "EW", "Select", "Pooled", "PerUnit", "Shrink", "KMeans2S",
-                "FTO-PerUnit", "FTO-Grouped", "GDMA", "GDMA-soft"]
-SAVE_ORDERS = ["Official", "EW", "Pooled", "PerUnit", "Shrink", "FTO-PerUnit", "GDMA", "GDMA-soft"]
+                "FTO-PerUnit", "FTO-Grouped", "GDMA", "GDMA-soft", "GDMA-fair"]
+SAVE_ORDERS = ["Official", "EW", "Pooled", "PerUnit", "Shrink", "FTO-PerUnit", "GDMA", "GDMA-soft",
+               "GDMA-fair"]
 MAX_WINDOW = 56
 
 
@@ -183,6 +184,18 @@ def main():
         orders[9][:, out] = comb(full(Wg, pooled))
         orders[10][:, out] = comb(full(sg["W_units"], pooled))
 
+        # fair soft GDMA ("one area, one vote"): every area's cost is divided by its
+        # in-window cost under the single best forecaster, so that each area counts
+        # equally in relative terms; this rescales u_i and o_i by the same factor
+        c0 = newsvendor_cost(ya_, Qa_[:, :, 0], ua[:, None], oa[:, None]).sum(axis=1)
+        omega = 1.0 / np.maximum(c0, 1e-9)
+        omega = omega / omega.mean()
+        sf = select_soft_grouped(Qa_, ya_, G_MAX, ua * omega, oa * omega, scale=sa,
+                                 n_init=args.n_init, init_labels=init)
+        orders[11][:, out] = comb(full(sf["W_units"], pooled))
+        hist.setdefault("G_fair", []).append(sf["G"])
+        hist.setdefault("kappa_fair", []).append(sf["kappa"])
+
         hist["G"].append(sg["G"]); hist["labels"].append(labels); hist["W"].append(full(Wg, pooled))
         hist["kappa"].append(sg["kappa"]); hist["kappa_shrink"].append(kap)
         hist["G_km"].append(Gk); hist["G_fto"].append(gf["G"]); hist["active"].append(active)
@@ -208,6 +221,7 @@ def main():
                         kappa=np.array(hist["kappa"]), kappa_shrink=np.array(hist["kappa_shrink"]),
                         G_km=np.array(hist["G_km"]), G_fto=np.array(hist["G_fto"]),
                         active=np.array(hist["active"]), origins=origins,
+                        G_fair=np.array(hist["G_fair"]), kappa_fair=np.array(hist["kappa_fair"]),
                         candidates=np.array(cand))
     np.savez_compressed(os.path.join(ROOT, "results", f"orders_{tag}.npz"),
                         orders=orders[keep][:, :, ev, :], methods=np.array(SAVE_ORDERS), eval_days=ev)
