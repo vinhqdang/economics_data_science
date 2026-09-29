@@ -83,3 +83,12 @@ The theory concerns the population risk $R$ evaluated at the estimated policy.
 In a rolling application the policy estimated on periods $1,\dots,T$ is applied in periods $T+1,\dots,T+k$.
 If $\{\bm z_{it}\}$ is $\beta$-mixing with coefficients $\beta(\cdot)$, a coupling argument \citep{Yu1994} shows that the expected cost of the estimated policy in period $T+s$ differs from $\mathbb E\,R(\widehat{\bm\gamma},\widehat{\bm W})$ by at most $L\beta(s)$.
 The bounds of Section~\ref{sec:theory} therefore also bound the out-of-sample cost up to a term that vanishes with the gap between estimation and application.
+
+\section{Balancing authorities}\label{app:data}
+
+\begin{table}[h]
+\centering
+\caption{The 46 balancing authorities, ordered by mean hourly demand over 2019--2026. Flex.: interchange flexibility in 2019 (range between the 5th and 95th percentiles of hourly total interchange, divided by mean demand). $\tau_i$: calibrated critical ratio.}\label{tab:bas}
+\scriptsize
+\input{tables/bas.tex}
+\end{table}

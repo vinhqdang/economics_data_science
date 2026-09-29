@@ -220,6 +220,18 @@ def main():
     lines += [r"\bottomrule", r"\end{tabular}"]
     open(os.path.join(TAB, "events.tex"), "w").write("\n".join(lines).replace("Winter Storm ", "").replace(" (", r"\newline (") if False else "\n".join(lines))
 
+    # ---------------- data appendix: BAs ------------------------------------
+    pn = np.load(os.path.join(ROOT, "data", "processed", "panel.npz"), allow_pickle=True)
+    nm = [str(x).replace("Demand for ", "").split(", hourly")[0].split(" (")[0] for x in pn["names"]]
+    dfb = pd.DataFrame(dict(ba=pn["ba"], name=nm, mean=np.nanmean(pn["Y"], axis=(1, 2)),
+                            flex=pn["flex"], tau=r["tau"])).sort_values("mean", ascending=False)
+    rows = [f"{b.ba} & {b['name'].replace('&', chr(92) + '&')} & {b['mean']:,.0f} & {b.flex:.2f} & {b.tau:.3f}" + r" \\"
+            for _, b in dfb.iterrows()]
+    half = (len(rows) + 1) // 2
+    lines = [r"\begin{tabular}{@{}llrrr@{}}", r"\toprule",
+             r"Code & Balancing authority & Mean MW & Flex. & $\tau_i$ \\", r"\midrule"] + rows + [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(TAB, "bas.tex"), "w").write("\n".join(lines))
+
     # ---------------- console summary ---------------------------------------
     for t in windows:
         print("\n==", t)
