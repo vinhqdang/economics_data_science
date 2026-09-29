@@ -1,19 +1,19 @@
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
- & \multicolumn{2}{c}{System cost relative to the official-forecast policy} & \\
-\cmidrule(lr){2-3}
-Method & $W=7$ & $W=14$ & Share of BAs \\
- & days & days & improved$^a$ \\
+ & \multicolumn{3}{c}{System cost relative to the official-forecast policy} & \\
+\cmidrule(lr){2-4}
+Method & $W=7$ & $W=14$ & $W=28$ & Share of BAs \\
+ & days & days & days & improved$^a$ \\
 \midrule
-Official forecast & 1.0000$^{***}$ & 1.0000$^{***}$ & 0.00 \\
-Equal weights & 1.5322$^{***}$ & 1.5322$^{***}$ & 0.13 \\
-Best single (per BA) & 0.8490$^{***}$ & 0.8289$^{***}$ & 0.72 \\
-Pooled DF weights & 0.8156 & 0.8110$^{**}$ & 0.76 \\
-Per-BA DF weights & 0.8497$^{***}$ & 0.8221$^{***}$ & 0.72 \\
-Shrinkage to pooled & \textbf{0.8154} & \textbf{0.8054}$^{**}$ & 0.76 \\
-Two-step $k$-means & 0.8243 & 0.8077 & 0.80 \\
-Forecast-then-commit, per BA & 0.9713$^{***}$ & 0.8850$^{***}$ & 0.59 \\
-Forecast-then-commit, grouped & 0.9068$^{***}$ & 0.8523$^{***}$ & 0.63 \\
-\textbf{GDMA} & 0.8163 & 0.8079 & 0.78 \\
+Official forecast & 1.0000$^{***}$ & 1.0000$^{***}$ & 1.0000$^{***}$ & 0.00 \\
+Equal weights & 1.5322$^{***}$ & 1.5322$^{***}$ & 1.5322$^{***}$ & 0.13 \\
+Best single (per BA) & 0.8490$^{***}$ & 0.8289$^{***}$ & 0.8245$^{***}$ & 0.76 \\
+Pooled DF weights & 0.8156 & 0.8110$^{**}$ & 0.8076$^{***}$ & 0.78 \\
+Per-BA DF weights & 0.8497$^{***}$ & 0.8221$^{***}$ & 0.8069 & 0.78 \\
+Shrinkage to pooled & \textbf{0.8154} & \textbf{0.8054}$^{**}$ & \textbf{0.8010}$^{**}$ & 0.80 \\
+Two-step $k$-means & 0.8243 & 0.8077 & 0.8041 & 0.83 \\
+Forecast-then-commit, per BA & 0.9713$^{***}$ & 0.8850$^{***}$ & 0.8382$^{***}$ & 0.65 \\
+Forecast-then-commit, grouped & 0.9068$^{***}$ & 0.8523$^{***}$ & 0.8260$^{***}$ & 0.67 \\
+\textbf{GDMA} & 0.8163 & 0.8079 & 0.8042 & 0.78 \\
 \bottomrule
 \end{tabular}
