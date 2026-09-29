@@ -128,3 +128,20 @@ A gap remains between data-rich and data-poor systems: data-poor areas save 14\%
 Strikingly, fairness costs nothing here.
 Fair soft GDMA, which counts every area's relative improvement equally, is also the cheapest method in total (0.816 against 0.819, significant at the 1\% level).
 Weighting by relative cost prevents the few largest systems from dictating the segment rules, and the rules that serve the many smaller systems well turn out to generalise better out of sample---consistent with the segment-structure argument of Section~\ref{sec:theory}, under which fair and efficient criteria share their minimiser.
+
+\paragraph{Income.}
+Fairness at this scale is also a question of income.
+We attach to every grid area the GDP per capita at purchasing-power parity of its country and its World Bank income group \citep{WorldBankWDI}, with Taiwan from the IMF World Economic Outlook \citep{IMFWEO}; 83 areas are in high-income and 42 in upper-middle-income countries.
+For the U.S.\ balancing authorities we also compute the per-capita personal income of the states they serve \citep{BEApcpi}, weighted by approximate service-territory shares.
+Table~\ref{tab:income} reports the results.
+
+\begin{table}[t]
+\centering
+\caption{Benefits by income ($W=28$): commitment cost relative to the single best forecaster by World Bank income group and, within the United States, for the balancing authorities in the lowest and highest third of state per-capita income; Spearman rank correlations between an area's cost ratio and income.}\label{tab:income}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\input{tables/global_income.tex}
+\par\smallskip\footnotesize $^g$ A negative correlation means that richer areas have lower cost ratios, i.e.\ gain more.
+\end{table}
+
+INCOME_TEXT
