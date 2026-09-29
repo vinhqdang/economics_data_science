@@ -102,6 +102,30 @@ def main():
         lines += [r"\bottomrule", r"\end{tabular}"]
         open(os.path.join(TAB, "global_windows.tex"), "w").write("\n".join(lines))
 
+    # ---------------- Table: common critical ratio (world, W = 28) ------------
+    tp = os.path.join(ROOT, "results", "backtest_global_w28_tau0.9.npz")
+    if os.path.exists(tp):
+        rt = np.load(tp, allow_pickle=True)
+        mt = list(rt["methods"])
+        ct = rt["daily_cost"]
+        lines = [r"\begin{tabular}{@{}l" + "c" * len(cols) + "@{}}", r"\toprule",
+                 "Method & " + " & ".join(cols) + r" \\", r"\midrule"]
+        rel_t = {}
+        for c in cols:
+            mask = np.ones(len(cont), bool) if c == "World" else cont == c
+            tot = ct[:, mask].sum(axis=(1, 2))
+            rel_t[c] = tot / tot[mt.index("Official")]
+        for m in [x for x in rows if x in mt]:
+            k = mt.index(m)
+            cells = []
+            for c in cols:
+                v = rel_t[c][k]
+                best = min(rel_t[c][mt.index(x)] for x in rows if x in mt)
+                cells.append((r"\textbf{%.3f}" % v) if np.isclose(v, best) else f"{v:.3f}")
+            lines.append(LABEL[m] + " & " + " & ".join(cells) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        open(os.path.join(TAB, "global_tau.tex"), "w").write("\n".join(lines))
+
     # ---------------- Table: entry (transfer) ---------------------------
     act = r["active"]                         # (origins, N)
     origins, ev = r["origins"], r["eval_days"]
