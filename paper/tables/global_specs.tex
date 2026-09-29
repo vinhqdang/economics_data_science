@@ -1,0 +1,19 @@
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Method & No weather (8 candidates) & Weather, forecast error 2$^\circ$C (main) \\
+\midrule
+Single best forecaster$^a$ & 1.000 & 1.000 \\
+Equal weights & 1.315 & 1.252 \\
+Best single (per area) & 0.870 & 0.866 \\
+Pooled DF weights & 0.872 & 0.861 \\
+Per-area DF weights & 0.838 & 0.830 \\
+Shrinkage to pooled & 0.833 & 0.824 \\
+Two-step $k$-means & 0.832 & 0.824 \\
+Forecast-then-commit, per area & 0.923 & 0.913 \\
+Forecast-then-commit, grouped & 0.917 & 0.906 \\
+Neural gate (deep MoE) & 0.918 & 0.916 \\
+GDMA & 0.835 & 0.826 \\
+\textbf{Soft GDMA} & 0.828 & 0.819 \\
+Fair soft GDMA & -- & 0.816 \\
+\bottomrule
+\end{tabular}

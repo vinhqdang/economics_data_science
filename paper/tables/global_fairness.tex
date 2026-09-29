@@ -1,0 +1,23 @@
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{Per-area cost ratio} & Areas & Worst & Data-rich & Data-poor \\
+\cmidrule(lr){2-4}
+Method & P10 & Median & P90 & harmed & continent$^d$ & areas & areas$^e$ \\
+\midrule
+Single best forecaster$^a$ & 1.000 & 1.000 & 1.000 & 0.00 & 1.000 & 1.000 & 1.000 \\
+Equal weights & 0.976 & 1.126 & 1.593 & 0.86 & 1.263 & 1.257 & 1.155 \\
+Best single (per area) & 0.797 & 0.915 & 1.017 & 0.16 & 0.928 & 0.863 & 0.915 \\
+Pooled DF weights & 0.786 & 0.894 & 1.011 & 0.13 & 0.905 & 0.861 & 0.860 \\
+Per-area DF weights & 0.772 & 0.883 & 0.977 & 0.06 & 0.909 & 0.826 & 0.900 \\
+Shrinkage to pooled & 0.773 & 0.869 & 0.976 & 0.06 & 0.883 & 0.822 & 0.862 \\
+Two-step $k$-means & 0.777 & 0.879 & 0.974 & 0.05 & 0.887 & 0.823 & 0.862 \\
+Forecast-then-commit, per area & 0.792 & 0.915 & 1.153 & 0.26 & 0.970 & 0.913 & 0.916 \\
+Forecast-then-commit, grouped & 0.800 & 0.893 & 1.166 & 0.25 & 0.979 & 0.908 & 0.871 \\
+Neural gate (deep MoE) & 0.802 & 0.921 & 1.105 & 0.33 & 1.043 & 0.911 & 1.020 \\
+GDMA & 0.778 & 0.872 & 0.979 & 0.09 & 0.883 & 0.824 & 0.862 \\
+\textbf{Soft GDMA} & 0.770 & 0.863 & 0.969 & 0.04 & 0.880 & 0.817 & 0.863 \\
+Fair soft GDMA & 0.771 & 0.857 & 0.957 & 0.03 & 0.875 & 0.814 & 0.859 \\
+\midrule
+Areas & & 125 & & & & 93 & 32 \\
+\bottomrule
+\end{tabular}

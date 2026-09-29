@@ -131,7 +131,8 @@ def main():
     if 14 in res:
         lines = [r"\begin{tabular}{@{}lcc@{}}", r"\toprule", r"Method & $W=14$ & $W=28$ \\", r"\midrule"]
         rel = {}
-        for W, rr in res.items():
+        for W in (14, 28):
+            rr = load(W, "")                       # both windows without the weather candidate
             s = rr["daily_cost"].sum(axis=(1, 2))
             rel[W] = dict(zip(rr["methods"], s / s[list(rr["methods"]).index("Official")]))
         for m in rows:
