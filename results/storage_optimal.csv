@@ -1,0 +1,106 @@
+policy,battery_usd,continent,gw,net_benefit_musd,areas,n_areas
+Official,100000.0,North America,0.0,0.0,0,46
+Official,100000.0,Europe,0.0,0.0,0,33
+Official,100000.0,Oceania,0.0,0.0,0,5
+Official,100000.0,Asia,0.0,0.0,0,40
+Official,100000.0,Africa,0.0,0.0,0,1
+Official,150000.0,North America,0.0,0.0,0,46
+Official,150000.0,Europe,0.0,0.0,0,33
+Official,150000.0,Oceania,0.0,0.0,0,5
+Official,150000.0,Asia,0.0,0.0,0,40
+Official,150000.0,Africa,0.0,0.0,0,1
+Official,200000.0,North America,0.0,0.0,0,46
+Official,200000.0,Europe,0.0,0.0,0,33
+Official,200000.0,Oceania,0.0,0.0,0,5
+Official,200000.0,Asia,0.0,0.0,0,40
+Official,200000.0,Africa,0.0,0.0,0,1
+EW,100000.0,North America,0.0,0.0,0,46
+EW,100000.0,Europe,0.0,0.0,0,33
+EW,100000.0,Oceania,0.0,0.0,0,5
+EW,100000.0,Asia,0.0,0.0,0,40
+EW,100000.0,Africa,0.0,0.0,0,1
+EW,150000.0,North America,0.0,0.0,0,46
+EW,150000.0,Europe,0.0,0.0,0,33
+EW,150000.0,Oceania,0.0,0.0,0,5
+EW,150000.0,Asia,0.0,0.0,0,40
+EW,150000.0,Africa,0.0,0.0,0,1
+EW,200000.0,North America,0.0,0.0,0,46
+EW,200000.0,Europe,0.0,0.0,0,33
+EW,200000.0,Oceania,0.0,0.0,0,5
+EW,200000.0,Asia,0.0,0.0,0,40
+EW,200000.0,Africa,0.0,0.0,0,1
+Pooled,100000.0,North America,0.0,0.0,0,46
+Pooled,100000.0,Europe,0.0,0.0,0,33
+Pooled,100000.0,Oceania,0.0,0.0,0,5
+Pooled,100000.0,Asia,0.0,0.0,0,40
+Pooled,100000.0,Africa,0.0,0.0,0,1
+Pooled,150000.0,North America,0.0,0.0,0,46
+Pooled,150000.0,Europe,0.0,0.0,0,33
+Pooled,150000.0,Oceania,0.0,0.0,0,5
+Pooled,150000.0,Asia,0.0,0.0,0,40
+Pooled,150000.0,Africa,0.0,0.0,0,1
+Pooled,200000.0,North America,0.0,0.0,0,46
+Pooled,200000.0,Europe,0.0,0.0,0,33
+Pooled,200000.0,Oceania,0.0,0.0,0,5
+Pooled,200000.0,Asia,0.0,0.0,0,40
+Pooled,200000.0,Africa,0.0,0.0,0,1
+PerUnit,100000.0,North America,0.0,0.0,0,46
+PerUnit,100000.0,Europe,0.0,0.0,0,33
+PerUnit,100000.0,Oceania,0.0,0.0,0,5
+PerUnit,100000.0,Asia,0.0,0.0,0,40
+PerUnit,100000.0,Africa,0.0,0.0,0,1
+PerUnit,150000.0,North America,0.0,0.0,0,46
+PerUnit,150000.0,Europe,0.0,0.0,0,33
+PerUnit,150000.0,Oceania,0.0,0.0,0,5
+PerUnit,150000.0,Asia,0.0,0.0,0,40
+PerUnit,150000.0,Africa,0.0,0.0,0,1
+PerUnit,200000.0,North America,0.0,0.0,0,46
+PerUnit,200000.0,Europe,0.0,0.0,0,33
+PerUnit,200000.0,Oceania,0.0,0.0,0,5
+PerUnit,200000.0,Asia,0.0,0.0,0,40
+PerUnit,200000.0,Africa,0.0,0.0,0,1
+FTO-PerUnit,100000.0,North America,0.0,0.0,0,46
+FTO-PerUnit,100000.0,Europe,0.0,0.0,0,33
+FTO-PerUnit,100000.0,Oceania,0.0,0.0,0,5
+FTO-PerUnit,100000.0,Asia,0.0,0.0,0,40
+FTO-PerUnit,100000.0,Africa,0.0,0.0,0,1
+FTO-PerUnit,150000.0,North America,0.0,0.0,0,46
+FTO-PerUnit,150000.0,Europe,0.0,0.0,0,33
+FTO-PerUnit,150000.0,Oceania,0.0,0.0,0,5
+FTO-PerUnit,150000.0,Asia,0.0,0.0,0,40
+FTO-PerUnit,150000.0,Africa,0.0,0.0,0,1
+FTO-PerUnit,200000.0,North America,0.0,0.0,0,46
+FTO-PerUnit,200000.0,Europe,0.0,0.0,0,33
+FTO-PerUnit,200000.0,Oceania,0.0,0.0,0,5
+FTO-PerUnit,200000.0,Asia,0.0,0.0,0,40
+FTO-PerUnit,200000.0,Africa,0.0,0.0,0,1
+GDMA,100000.0,North America,0.0,0.0,0,46
+GDMA,100000.0,Europe,0.0,0.0,0,33
+GDMA,100000.0,Oceania,0.0,0.0,0,5
+GDMA,100000.0,Asia,0.0,0.0,0,40
+GDMA,100000.0,Africa,0.0,0.0,0,1
+GDMA,150000.0,North America,0.0,0.0,0,46
+GDMA,150000.0,Europe,0.0,0.0,0,33
+GDMA,150000.0,Oceania,0.0,0.0,0,5
+GDMA,150000.0,Asia,0.0,0.0,0,40
+GDMA,150000.0,Africa,0.0,0.0,0,1
+GDMA,200000.0,North America,0.0,0.0,0,46
+GDMA,200000.0,Europe,0.0,0.0,0,33
+GDMA,200000.0,Oceania,0.0,0.0,0,5
+GDMA,200000.0,Asia,0.0,0.0,0,40
+GDMA,200000.0,Africa,0.0,0.0,0,1
+GDMA-soft,100000.0,North America,0.0,0.0,0,46
+GDMA-soft,100000.0,Europe,0.0,0.0,0,33
+GDMA-soft,100000.0,Oceania,0.0,0.0,0,5
+GDMA-soft,100000.0,Asia,0.0,0.0,0,40
+GDMA-soft,100000.0,Africa,0.0,0.0,0,1
+GDMA-soft,150000.0,North America,0.0,0.0,0,46
+GDMA-soft,150000.0,Europe,0.0,0.0,0,33
+GDMA-soft,150000.0,Oceania,0.0,0.0,0,5
+GDMA-soft,150000.0,Asia,0.0,0.0,0,40
+GDMA-soft,150000.0,Africa,0.0,0.0,0,1
+GDMA-soft,200000.0,North America,0.0,0.0,0,46
+GDMA-soft,200000.0,Europe,0.0,0.0,0,33
+GDMA-soft,200000.0,Oceania,0.0,0.0,0,5
+GDMA-soft,200000.0,Asia,0.0,0.0,0,40
+GDMA-soft,200000.0,Africa,0.0,0.0,0,1

@@ -158,6 +158,35 @@ def main():
     fig.savefig(os.path.join(FIG, "storage_frontier.pdf"))
     plt.close(fig)
 
+    # ---------------- storage tables ------------------------------------------
+    bp = os.path.join(ROOT, "results", "storage_budget.csv")
+    if os.path.exists(bp):
+        bud = pd.read_csv(bp)
+        eq = pd.read_csv(os.path.join(ROOT, "results", "storage_equivalent.csv")).set_index("policy")
+        SL = {"Official": "Single best forecaster", "EW": "Equal weights", "Pooled": "Pooled DF",
+              "PerUnit": "Per-area DF", "FTO-PerUnit": "Forecast-then-commit", "GDMA": "GDMA",
+              "GDMA-soft": r"\textbf{Soft GDMA}"}
+        lines = [r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",
+                 r" & Cost without & GW to match & \multicolumn{5}{c}{Siting of a 10 GW budget (GW)} \\",
+                 r"\cmidrule(lr){4-8}",
+                 r"Commitment rule & storage (\$bn/yr) & soft GDMA$^c$ & N.\ Am. & Europe & Oceania & Asia & Africa \\",
+                 r"\midrule"]
+        for m in SL:
+            b = bud[(bud.budget_gw == 10) & (bud.policy == m)].iloc[0]
+            g = eq.loc[m, "gw_to_match_soft"]
+            gs = "$>60$" if not np.isfinite(g) else ("--" if m == "GDMA-soft" else f"{g:.0f}")
+            lines.append(f"{SL[m]} & {eq.loc[m, 'cost_no_storage_musd'] / 1e3:.2f} & {gs} & "
+                         + " & ".join(f"{b[f'gw_{c}']:.1f}" for c in CONTS) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        open(os.path.join(TAB, "storage.tex"), "w").write("\n".join(lines))
+        lines = [r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
+                 r"Siting based on & 1 GW & 5 GW & 10 GW & 20 GW \\", r"\midrule"]
+        for m in ["Official", "PerUnit", "FTO-PerUnit", "GDMA-soft"]:
+            v = [bud[(bud.budget_gw == B) & (bud.policy == m)].value_under_soft_musd.iloc[0] for B in (1, 5, 10, 20)]
+            lines.append(SL[m] + " & " + " & ".join(f"{x:.0f}" for x in v) + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        open(os.path.join(TAB, "siting_value.tex"), "w").write("\n".join(lines))
+
     # ---------------- console summary ----------------------------------------
     pd.set_option("display.width", 200)
     print(pd.DataFrame({c: dict(zip(meth, tab[c][0])) for c in cols}).loc[rows].round(4))

@@ -1,0 +1,18 @@
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Method & $W=14$ & $W=28$ \\
+\midrule
+Single best forecaster$^a$ & 1.000 & 1.000 \\
+Equal weights & 1.315 & 1.315 \\
+Best single (per area) & 0.887 & 0.870 \\
+Pooled DF weights & 0.874 & 0.872 \\
+Per-area DF weights & 0.857 & 0.838 \\
+Shrinkage to pooled & 0.846 & 0.833 \\
+Two-step $k$-means & 0.843 & 0.832 \\
+Forecast-then-commit, per area & 0.973 & 0.923 \\
+Forecast-then-commit, grouped & 0.948 & 0.917 \\
+Neural gate (deep MoE) & 0.918 & 0.918 \\
+GDMA & 0.849 & 0.835 \\
+\textbf{Soft GDMA} & 0.841 & 0.828 \\
+\bottomrule
+\end{tabular}
