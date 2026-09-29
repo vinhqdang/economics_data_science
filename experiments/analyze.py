@@ -87,7 +87,9 @@ def main():
 
     # ---------------- Table: main results by window -----------------------
     summ = {t: summary(res[t])[0] for t in windows}
-    meth = list(res[windows[0]]["methods"])
+    meth = []
+    for t in windows:
+        meth += [m for m in res[t]["methods"] if m not in meth]
     lines = [r"\begin{tabular}{@{}l" + "c" * len(windows) + "c@{}}", r"\toprule",
              " & \\multicolumn{%d}{c}{System cost relative to the official-forecast policy} & \\\\" % len(windows),
              r"\cmidrule(lr){2-%d}" % (len(windows) + 1),
@@ -97,6 +99,9 @@ def main():
     for m in meth:
         cells = []
         for t in windows:
+            if m not in summ[t].index:
+                cells.append("--")
+                continue
             s = summ[t].loc[m]
             best = summ[t]["rel_off"].min()
             v = f"{s.rel_off:.4f}"
@@ -106,7 +111,8 @@ def main():
             if m != "GDMA" and np.isfinite(s.dm_p):
                 star = "$^{***}$" if s.dm_p < 0.01 else "$^{**}$" if s.dm_p < 0.05 else "$^{*}$" if s.dm_p < 0.1 else ""
             cells.append(v + star)
-        lines.append(LABEL[m] + " & " + " & ".join(cells) + f" & {summ[main_w].loc[m].beat_off:.2f}" + r" \\")
+        share = f"{summ[main_w].loc[m].beat_off:.2f}" if m in summ[main_w].index else "--"
+        lines.append(LABEL[m] + " & " + " & ".join(cells) + f" & {share}" + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     open(os.path.join(TAB, "main.tex"), "w").write("\n".join(lines))
 
@@ -116,7 +122,7 @@ def main():
     lines = [r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
              r"Method & Scale-free cost$^b$ & Shortfall & DM statistic \\",
              r" & (rel.\ to EW) & frequency & vs GDMA$^c$ \\", r"\midrule"]
-    for m in meth:
+    for m in s.index:
         dm = "--" if m == "GDMA" else f"{s.loc[m].dm_t:.2f}"
         lines.append(f"{LABEL[m]} & {s.loc[m].norm_rel_ew:.4f} & {s.loc[m].short_rate:.3f} & {dm}" + r" \\")
     lines += [r"\midrule", f"Target (mean $\\tau_i$ across BAs) & & {1 - tau.mean():.3f} & " + r"\\",
@@ -145,6 +151,7 @@ def main():
     # ---------------- Figure: cumulative savings over time ---------------------
     r = res[main_w]
     _, sysd = summary(r)
+    meth = list(r["methods"])
     days = pd.to_datetime(np.load(os.path.join(ROOT, "data", "processed", "panel.npz"), allow_pickle=True)["days"])
     ev = days[r["eval_days"]]
     k_off = meth.index("Official")

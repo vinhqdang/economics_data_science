@@ -292,23 +292,35 @@ def select_soft_grouped(Q, Y, G_max, u=None, o=None, loss="newsvendor", scale=No
                         frac=2 / 3, n_init=8, seed=0, init_labels=None,
                         kappas=np.linspace(0.0, 1.0, 5)):
     """Soft GDMA: unit weights shrunk towards their segment's weights,
-        w_i = (1 - kappa) * w_i^unit + kappa * w_{g_i},
-    with (G, kappa) chosen jointly by the temporal hold-out.  kappa = 1 is GDMA,
-    G = 1 is shrinkage towards pooled weights, kappa = 0 is unit-specific weights.
+        w_i = (1 - kappa) * w_i^unit + kappa * w_{g_i}.
+    G is chosen by the one-standard-error hold-out rule of `select_grouped`;
+    kappa is then chosen on the same hold-out block given G.  kappa = 1 is
+    GDMA, G = 1 is shrinkage towards pooled weights, kappa = 0 is unit-specific
+    weights.
     """
     N, T = Y.shape
     T1 = max(int(np.ceil(frac * T)), 2)
     Qa, Ya, Qb, Yb = Q[:, :T1], Y[:, :T1], Q[:, T1:], Y[:, T1:]
     Wu_a = fit_per_unit(Qa, Ya, u, o, loss, scale)
-    best = (np.inf, 1, 1.0)
+    fits, unit_scores = [], []
     for G in range(1, G_max + 1):
         fit = fit_grouped(Qa, Ya, G, u, o, loss, scale, n_init, seed=seed, W_unit=Wu_a)
-        Wg = fit["W"][fit["labels"]]
-        for k in kappas:
-            c = np.diag(cost_matrix(Qb, Yb, (1 - k) * Wu_a + k * Wg, u, o, loss, scale)).sum()
-            if c < best[0]:
-                best = (c, G, k)
-    _, G_star, k_star = best
+        fits.append(fit)
+        C = cost_matrix(Qb, Yb, fit["W"], u, o, loss, scale)
+        unit_scores.append(C[np.arange(N), fit["labels"]])
+    unit_scores = np.array(unit_scores)
+    G_best = int(np.argmin(unit_scores.sum(axis=1)))
+    G_star = G_best + 1
+    for G in range(G_best):
+        diff = unit_scores[G] - unit_scores[G_best]
+        if diff.sum() <= diff.std(ddof=1) * np.sqrt(N):
+            G_star = G + 1
+            break
+    fa = fits[G_star - 1]
+    Wg_a = fa["W"][fa["labels"]]
+    sc = [np.diag(cost_matrix(Qb, Yb, (1 - k) * Wu_a + k * Wg_a, u, o, loss, scale)).sum()
+          for k in kappas]
+    k_star = float(kappas[int(np.argmin(sc))])
     Wu = fit_per_unit(Q, Y, u, o, loss, scale)
     fit = fit_grouped(Q, Y, G_star, u, o, loss, scale, n_init, seed=seed,
                       W_unit=Wu, init_labels=init_labels)
