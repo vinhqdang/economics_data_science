@@ -78,12 +78,13 @@ Its weights are learned from a year of past weeks and transfer poorly to weeks i
 We did not tune the network extensively, so the comparison should be read as evidence that flexibility is not what this problem needs, not as a statement about the best achievable neural design.
 Third, better candidates and better combination are complements.
 The weather-aware model alone costs 0.941 of the single best forecaster, and adding it to the candidate set lowers the cost of soft GDMA from 0.828 to 0.819 (Table~\ref{tab:specs}); combining remains 13\% cheaper than the best single weather-aware model.
+With exact temperatures---a perfect weather forecast---every decision-focused and forecast-then-commit method becomes a further 0.7--1.1 points cheaper and the ranking is unchanged, so the conclusions do not depend on how accurate the weather forecast is assumed to be.
 Weather information also narrows the gap to the operators during Winter Storm Elliott: over those six days soft GDMA's excess cost over the U.S.\ official forecasts falls from 7.7\% without the weather candidate to 3.0\% with it, and plain GDMA is at parity (1.011).
 The ranking is stable across windows and critical ratios (Tables~\ref{tab:globalwindows} and~\ref{tab:globaltau} in the appendix).
 
 \begin{table}[t]
 \centering
-\caption{World commitment cost relative to the single best forecaster for three candidate sets ($W=28$).}\label{tab:specs}
+\caption{World commitment cost relative to the single best forecaster for three candidate sets ($W=28$): eight candidates without weather, nine with the weather-aware model fed temperatures with a 2\,$^\circ$C forecast error (main specification), and nine with exact temperatures (upper bound).}\label{tab:specs}
 \footnotesize
 \input{tables/global_specs.tex}
 \end{table}

@@ -273,8 +273,8 @@ def main():
 
     # ---------------- fairness audit and candidate-set robustness -------------
     fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
-    specs = [("No weather (8 candidates)", ""), ("Weather, forecast error 2$^\\circ$C (main)", "_weather-noise2"),
-             ("Weather, exact (upper bound)", "_weather-exact")]
+    specs = [("No weather", ""), ("Weather, $\\sigma=2^\\circ$C (main)", "_weather-noise2"),
+             ("Exact weather", "_weather-exact")]
     avail = [(n, sfx) for n, sfx in specs if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w28_taucalibrated{sfx}.npz"))]
     lines = [r"\begin{tabular}{@{}l" + "c" * len(avail) + "@{}}", r"\toprule",
              "Method & " + " & ".join(n for n, _ in avail) + r" \\", r"\midrule"]
