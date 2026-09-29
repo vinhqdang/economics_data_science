@@ -271,6 +271,42 @@ def main():
         open(os.path.join(TAB, "storage_fair.tex"), "w").write("\n".join(lines))
         print(fr[["budget_gw", "floor_lambda", "value_musd", "min_relben", "price_of_fairness"] + [c for c in fr.columns if c.startswith("gw_")]].round(3).to_string())
 
+    # ---------------- income gradient -------------------------------------
+    inc = pd.read_csv(os.path.join(ROOT, "results", "income_by_area.csv")).set_index("code")
+    Ck = r["daily_cost"].sum(axis=2)
+    k0 = meth.index("Official")
+    okk = Ck[k0] > 0
+    codes = r["code"][okk]
+    ratio = Ck[:, okk] / Ck[k0, okk][None]
+    grp = inc.loc[codes, "income_group"].values
+    lgdp = np.log(inc.loc[codes, "gdp_pc_ppp"].values)
+    us = np.array([c.startswith("US-") for c in codes])
+    pcpi = inc.loc[codes, "us_state_pcpi"].values
+    terc = np.full(len(codes), -1)
+    qs = np.nanquantile(pcpi[us], [1 / 3, 2 / 3])
+    terc[us] = np.digitize(pcpi[us], qs)
+    lines = [r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
+             r" & \multicolumn{3}{c}{All 125 areas} & \multicolumn{3}{c}{U.S.\ balancing authorities} \\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
+             r"Method & High & Upper-middle & Rank corr.\ with & Lowest & Highest & Rank corr.\ with \\",
+             r" & income & income & GDP p.c.$^g$ & income third & income third & state income$^g$ \\", r"\midrule"]
+    inc_out = {}
+    for m in [x for x in ORDER if x in meth]:
+        k = meth.index(m)
+        hi = Ck[k, okk][grp == "High income"].sum() / Ck[k0, okk][grp == "High income"].sum()
+        um = Ck[k, okk][grp != "High income"].sum() / Ck[k0, okk][grp != "High income"].sum()
+        rg = stats.spearmanr(ratio[k], lgdp).statistic
+        lo_t = Ck[k, okk][terc == 0].sum() / Ck[k0, okk][terc == 0].sum()
+        hi_t = Ck[k, okk][terc == 2].sum() / Ck[k0, okk][terc == 2].sum()
+        ru = stats.spearmanr(ratio[k][us], pcpi[us]).statistic
+        inc_out[m] = dict(high=hi, upper_middle=um, rho_gdp=rg, us_low=lo_t, us_high=hi_t, rho_us=ru)
+        f = lambda x: "--" if not np.isfinite(x) else f"{x:.3f}"
+        lines.append(f"{LABEL[m]} & {hi:.3f} & {um:.3f} & {f(rg)} & {lo_t:.3f} & {hi_t:.3f} & {f(ru)}" + r" \\")
+    lines += [r"\midrule", f"Areas & {int((grp == 'High income').sum())} & {int((grp != 'High income').sum())} & & "
+              f"{int((terc == 0).sum())} & {int((terc == 2).sum())} & " + r"\\", r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(TAB, "global_income.tex"), "w").write("\n".join(lines))
+    print("income", {m: {k: round(v, 3) for k, v in d.items()} for m, d in inc_out.items()})
+
     # ---------------- fairness audit and candidate-set robustness -------------
     fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
     specs = [("No weather", ""), ("Weather, $\\sigma=2^\\circ$C (main)", "_weather-noise2"),

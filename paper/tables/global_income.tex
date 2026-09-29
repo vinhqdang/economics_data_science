@@ -1,0 +1,24 @@
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{All 125 areas} & \multicolumn{3}{c}{U.S.\ balancing authorities} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Method & High & Upper-middle & Rank corr.\ with & Lowest & Highest & Rank corr.\ with \\
+ & income & income & GDP p.c.$^g$ & income third & income third & state income$^g$ \\
+\midrule
+Single best forecaster$^a$ & 1.000 & 1.000 & -- & 1.000 & 1.000 & -- \\
+Equal weights & 1.262 & 1.121 & 0.199 & 1.597 & 1.084 & -0.130 \\
+Best single (per area) & 0.863 & 0.907 & -0.079 & 0.948 & 0.666 & -0.005 \\
+Pooled DF weights & 0.860 & 0.869 & 0.033 & 0.931 & 0.688 & -0.136 \\
+Per-area DF weights & 0.825 & 0.892 & -0.198 & 0.895 & 0.630 & -0.090 \\
+Shrinkage to pooled & 0.821 & 0.863 & -0.092 & 0.889 & 0.636 & -0.112 \\
+Two-step $k$-means & 0.822 & 0.864 & -0.051 & 0.898 & 0.648 & -0.043 \\
+Forecast-then-commit, per area & 0.911 & 0.942 & -0.054 & 1.043 & 0.715 & -0.170 \\
+Forecast-then-commit, grouped & 0.906 & 0.909 & 0.039 & 1.060 & 0.748 & -0.156 \\
+Neural gate (deep MoE) & 0.912 & 0.977 & -0.246 & 1.062 & 0.738 & -0.180 \\
+GDMA & 0.823 & 0.863 & -0.033 & 0.900 & 0.656 & -0.066 \\
+\textbf{Soft GDMA} & 0.816 & 0.862 & -0.071 & 0.889 & 0.640 & -0.057 \\
+Fair soft GDMA & 0.813 & 0.858 & -0.069 & 0.885 & 0.641 & -0.062 \\
+\midrule
+Areas & 83 & 42 & & 15 & 16 & \\
+\bottomrule
+\end{tabular}

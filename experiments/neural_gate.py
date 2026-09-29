@@ -81,7 +81,7 @@ def main():
     ap.add_argument("--window", type=int, default=28)
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--epochs", type=int, default=150)
-    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2"])
+    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2", "gfs"])
     args = ap.parse_args()
     tag = f"global_w{args.window}_tau{args.tau}" + ("" if args.weather == "none" else f"_weather-{args.weather}")
     torch.manual_seed(0)

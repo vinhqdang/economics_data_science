@@ -54,10 +54,38 @@ def design(Y, OF, Tm, days, month, dow, cont):
     return np.stack(feats, axis=-1).reshape(-1, len(feats)), s
 
 
+def gfs_forecasts(d, N, Dn, H):
+    """Area-average GFS day-ahead temperature forecasts on the panel calendar;
+    lead 24+h hours of the run initialised at 00 UTC of day d-1 gives hour h of
+    day d (3-hourly leads linearly interpolated).  NaN before 2021."""
+    sys.path.insert(0, os.path.dirname(__file__))
+    from download_weather import POINTS
+    g = np.load(os.path.join(ROOT, "data", "interim", "gfs_t2m.npz"), allow_pickle=True)
+    pts = [tuple(p) for p in g["points"]]
+    pidx = {p: j for j, p in enumerate(pts)}
+    leads = g["leads"]
+    hourly = np.array([np.interp(24 + np.arange(H), leads, row) if np.isfinite(row).all() else np.full(H, np.nan)
+                       for row in g["t2m"].transpose(0, 2, 1).reshape(-1, len(leads))])
+    hourly = hourly.reshape(len(g["days"]), len(pts), H)          # (gdays, points, H)
+    day_pos = {str(x): i for i, x in enumerate(d["days"])}
+    Tf = np.full((N, Dn, H), np.nan)
+    for i, code in enumerate(d["code"]):
+        cols = [pidx[(round(la, 2), round(lo, 2))] if (round(la, 2), round(lo, 2)) in pidx else pidx[(la, lo)]
+                for la, lo in POINTS[str(code)]]
+        vals = np.nanmean(hourly[:, cols, :], axis=1)
+        for gi, day in enumerate(g["days"]):
+            if str(day) in day_pos:
+                Tf[i, day_pos[str(day)]] = vals[gi]
+    return Tf
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--noise", type=float, default=0.0)
     ap.add_argument("--threads", type=int, default=2)
+    ap.add_argument("--source", default="reanalysis", choices=["reanalysis", "gfs"],
+                    help="operating-day temperature: realised (reanalysis, optionally with "
+                         "--noise) or archived GFS day-ahead forecasts")
     args = ap.parse_args()
     d = np.load(os.path.join(ROOT, "data", "processed", "global_panel.npz"), allow_pickle=True)
     Y = d["Y"].astype(float)
@@ -74,6 +102,8 @@ def main():
     T = W.reindex(idx)[list(d["code"])].values.reshape(Dn, 24, N).transpose(2, 0, 1)
     # forecast-like temperature for the operating day (the lagged-day feature stays exact)
     Tf = T.copy()
+    if args.source == "gfs":
+        Tf = gfs_forecasts(d, N, Dn, H)
     if args.noise > 0:
         rng = np.random.default_rng(12345)
         z = rng.standard_normal((N, Dn, H))
@@ -111,7 +141,8 @@ def main():
         print("  weather lightgbm refit at day", d0, flush=True)
     F = np.maximum(F, 0.0)
     F[:, :first] = np.nan
-    np.save(os.path.join(ROOT, "data", "processed", f"global_weather_noise{args.noise:g}.npy"), F)
+    name = "global_weather_gfs.npy" if args.source == "gfs" else f"global_weather_noise{args.noise:g}.npy"
+    np.save(os.path.join(ROOT, "data", "processed", name), F)
     ok = np.isfinite(F) & np.isfinite(Y)
     with np.errstate(all="ignore"):
         e = np.abs(F - Y) / np.nanmean(Y, axis=(1, 2))[:, None, None]

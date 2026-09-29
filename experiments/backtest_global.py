@@ -62,7 +62,8 @@ def calibrate_costs(flex, tau_spec):
 
 
 WEATHER_FILES = {"exact": ("Weather", "global_weather_noise0.npy"),
-                 "noise2": ("Weather", "global_weather_noise2.npy")}
+                 "noise2": ("Weather", "global_weather_noise2.npy"),
+                 "gfs": ("Weather", "global_weather_gfs.npy")}
 
 
 def load_global(tau_spec, with_chronos=True, weather="none"):
@@ -107,7 +108,7 @@ def main():
     ap.add_argument("--window", type=int, default=28)
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--n_init", type=int, default=4)
-    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2"])
+    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2", "gfs"])
     args = ap.parse_args()
     tag = f"global_w{args.window}_tau{args.tau}" + ("" if args.weather == "none" else f"_weather-{args.weather}")
 
