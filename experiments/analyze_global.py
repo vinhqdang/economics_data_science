@@ -136,7 +136,7 @@ def main():
             s = rr["daily_cost"].sum(axis=(1, 2))
             rel[W] = dict(zip(rr["methods"], s / s[list(rr["methods"]).index("Official")]))
         for m in rows:
-            lines.append(LABEL[m] + " & " + " & ".join(f"{rel[W].get(m, np.nan):.3f}" for W in (14, 28)) + r" \\")
+            lines.append(LABEL[m] + " & " + " & ".join(f"{rel[W][m]:.3f}" if m in rel[W] else "--" for W in (14, 28)) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         open(os.path.join(TAB, "global_windows.tex"), "w").write("\n".join(lines))
 

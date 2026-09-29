@@ -59,7 +59,7 @@ Unlike GDMA, it can let weights vary continuously with observed conditions; like
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026), relative to the single best forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:global}
+\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026, nine candidates including the weather-aware model), relative to the single best forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:global}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_main.tex}
@@ -67,33 +67,63 @@ Unlike GDMA, it can let weights vary continuously with observed conditions; like
 \end{table}
 
 Table~\ref{tab:global} shows that the results of the U.S.\ analysis hold on every continent.
-Worldwide, soft GDMA lowers the commitment cost by 17.2\% relative to the single best forecaster and is significantly cheaper, at the 1\% level, than every competitor except the two forecast-then-commit methods, which are 11\% more expensive but whose daily costs are so volatile that the test is inconclusive; its margin over the closest competitors, two-step clustering and shrinkage, is small (0.4--0.6\%) but statistically clear.
-It has the lowest cost in Europe, Asia and Africa, is statistically tied with shrinkage and per-area weights in North America, and is 1.1\% more expensive than the best method in Oceania, where only five regions are available.
+Worldwide, soft GDMA lowers the commitment cost by 18.0\% relative to the single best forecaster, and its fair variant, discussed below, by 18.4\%.
+Soft GDMA is significantly cheaper, at the 1\% level, than every competitor except its own fair variant, which is cheaper still, and the two forecast-then-commit methods, which are 11\% more expensive but whose daily costs are so volatile that the test is inconclusive; its margin over the closest competitors, shrinkage and two-step clustering, is small (0.5--0.6\%) but statistically clear.
+One of the two GDMA variants has the lowest cost in Europe, Asia and Africa, and soft GDMA is tied with shrinkage in North America; in Oceania, with only five regions, the per-area, forecast-then-commit and neural-gate rules are 0.6--0.9\% cheaper than fair soft GDMA.
 
 Three comparisons stand out.
-First, decision-focused combination again dominates forecast-then-commit: combining the same eight forecasts for accuracy and adding a quantile margin saves only 8\% worldwide and \emph{raises} cost in Asia by 10--12\%, where short histories make the estimated margins of the combined forecasts unreliable.
-Second, the neural gate is clearly worse than the simple decision-focused rules (0.918 against 0.828 worldwide) despite its flexibility; it is the best method only in Oceania.
+First, decision-focused combination again dominates forecast-then-commit: combining the same forecasts for accuracy and adding a quantile margin saves only 9\% worldwide and \emph{raises} cost in Asia by 10--12\%, where short histories make the estimated margins of the combined forecasts unreliable.
+Second, the neural gate is clearly worse than the simple decision-focused rules (0.916 against 0.819 worldwide) despite its flexibility; it is competitive only in Oceania.
 Its weights are learned from a year of past weeks and transfer poorly to weeks in which the relative performance of the candidates has shifted, whereas GDMA re-estimates a few interpretable rules every week.
 We did not tune the network extensively, so the comparison should be read as evidence that flexibility is not what this problem needs, not as a statement about the best achievable neural design.
-Third, the ranking is stable across windows (Table~\ref{tab:globalwindows} in the appendix): with $W=14$ soft GDMA saves 15.9\% and is again the cheapest method worldwide.
+Third, better candidates and better combination are complements.
+The weather-aware model alone costs 0.941 of the single best forecaster, and adding it to the candidate set lowers the cost of soft GDMA from 0.828 to 0.819 (Table~\ref{tab:specs}); combining remains 13\% cheaper than the best single weather-aware model.
+Weather information also narrows the gap to the operators during Winter Storm Elliott: over those six days soft GDMA's excess cost over the U.S.\ official forecasts falls from 7.7\% without the weather candidate to 3.0\% with it, and plain GDMA is at parity (1.011).
+The ranking is stable across windows and critical ratios (Tables~\ref{tab:globalwindows} and~\ref{tab:globaltau} in the appendix).
+
+\begin{table}[t]
+\centering
+\caption{World commitment cost relative to the single best forecaster for three candidate sets ($W=28$).}\label{tab:specs}
+\footnotesize
+\input{tables/global_specs.tex}
+\end{table}
 
 \paragraph{New and data-poor systems.}
 Fifty-two areas enter the panel after the start of the evaluation: the 46 U.S.\ balancing authorities in January 2019, the five Thai regions in January 2023 and one European system.
 During their first eight weeks each of them has only a few weeks of history (Table~\ref{tab:entry}).
 Pooled weights, which impose the rule learned from other systems, are 23\% more expensive than the single best forecaster in this phase, and the neural gate, whose features are not yet informative, is 63\% more expensive.
-Two-step clustering (0.971) and soft GDMA (0.978) are the only methods that clearly beat the single best forecaster, and per-area weights are close behind (0.991).
-The gain from segments in this phase is thus modest; what the entry experiment shows most clearly is that a single global rule, whether pooled or learned by a network, can be costly for a system whose conditions differ from the majority.
+The three GDMA variants are the cheapest methods for entering areas (0.962--0.969), ahead of two-step clustering (0.976) and per-area weights (0.991): a new system borrows the rule of the segment it resembles after a few weeks, which is the mechanism behind the $\log G/T$ term of Theorem~\ref{thm:oracle}.
 
 \begin{table}[t]
 \centering
-\caption{Commitment cost of areas entering the panel, relative to the single best forecaster ($W=28$).}\label{tab:entry}
+\caption{Commitment cost of areas entering the panel, relative to the single best forecaster ($W=28$, nine candidates).}\label{tab:entry}
 \footnotesize
 \input{tables/global_entry.tex}
 \par\smallskip\footnotesize $^b$ The first eight weeks after an area has at least one day of data in the estimation window.
 \end{table}
 
 \paragraph{Segments across continents.}
-GDMA uses more than one segment in 75\% of the weekly re-estimations (two segments in 42\%, three in 21\%), much more often than in the U.S.\ panel, and soft GDMA shrinks towards the segment rule with an average intensity of $\kappa=0.70$.
+GDMA uses more than one segment in 73\% of the weekly re-estimations (two segments in 37\%, three in 19\%), much more often than in the U.S.\ panel, and soft GDMA shrinks towards the segment rule with an average intensity of $\kappa=0.70$.
 Segments are not continents.
-Among weeks with several segments, two European systems share a segment 67\% of the time and two U.S.\ balancing authorities 53\% of the time, but European, Oceanian and African systems are grouped together about 70\% of the time, and North American areas are grouped with European ones only 28\% of the time.
+Among weeks with several segments, two European systems share a segment 65\% of the time and two U.S.\ balancing authorities 52\% of the time, but European, Oceanian and African systems are grouped together 63--73\% of the time, and North American areas are grouped with European ones only 27\% of the time.
 The segmentation therefore does not follow geography; it is consistent with differences in which forecasting systems work---notably whether an operator's own forecast is available and informative---which a planner could not have specified in advance.
+
+\subsection{Who benefits? A fairness audit}\label{sec:fairaudit}
+
+\begin{table}[t]
+\centering
+\caption{Distribution of the benefits across the 125 grid areas ($W=28$, nine candidates): percentiles of each area's cost relative to its own single best forecaster, share of areas made worse off, median ratio in the worst-served continent, and cost ratios for data-rich and data-poor areas.}\label{tab:fairness}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\input{tables/global_fairness.tex}
+\par\smallskip\footnotesize $^d$ Highest continent-level median of the per-area ratios. $^e$ Areas with less than two years of evaluation data (the Chinese provinces, Thailand and Algeria).
+\end{table}
+
+Table~\ref{tab:fairness} asks how the gains are distributed.
+Methods that impose a common rule or learn a flexible global map spread their gains unevenly: pooled weights make 13\% of the areas worse off than their own single best forecaster, and the neural gate and the forecast-then-commit methods 25--33\%; for the neural gate the median area in the worst-served continent loses 4\%.
+Soft GDMA makes only 4\% of areas worse off and has the best worst-served continent among the efficiency-oriented methods, and fair soft GDMA improves on every count (3\% harmed, the tightest distribution with a 90th percentile of 0.957, and a worst-served continent at 0.875).
+A gap remains between data-rich and data-poor systems: data-poor areas save 14\% under the GDMA variants against 18--19\% for data-rich ones, and per-area weights, which have little data to work with for these systems, save only 10\%.
+
+Strikingly, fairness costs nothing here.
+Fair soft GDMA, which counts every area's relative improvement equally, is also the cheapest method in total (0.816 against 0.819, significant at the 1\% level).
+Weighting by relative cost prevents the few largest systems from dictating the segment rules, and the rules that serve the many smaller systems well turn out to generalise better out of sample---consistent with the segment-structure argument of Section~\ref{sec:theory}, under which fair and efficient criteria share their minimiser.
