@@ -1,74 +1,102 @@
-# Grouped Decision-Focused Model Averaging (GDMA)
+# From Forecasts to Batteries: Grouped Decision-Focused Model Averaging
 
 Research code and manuscript for
 
-> **Grouped Decision-Focused Model Averaging for System-Wide Capacity Commitment: Evidence from the U.S. Power Grid**
+> **From Forecasts to Batteries: Grouped Decision-Focused Model Averaging for Capacity Commitment and Storage Siting on Five Continents**
 > Quang-Vinh Dang, British University Vietnam.
 > Prepared for the *Journal of Management Science and Engineering* special issue
-> [Economics and Management Empowered by Data Science](https://www.sciencedirect.com/special-issue/330213/economics-and-management-empowered-by-data-science) (deadline 31 Oct 2026).
+> [Economics and Management Empowered by Data Science](https://www.sciencedirect.com/special-issue/330213/economics-and-management-empowered-by-data-science) (deadline 31 October 2026).
 
-## The problem
+The compiled manuscript is `paper/main.pdf`.
 
-A system planner manages many decision units (here, the 46 balancing authorities of the U.S. grid).
-Every day each unit must commit capacity for the next day's hourly demand. A shortfall
-costs more than a surplus, and how much more depends on how well the unit can import from
-its neighbours. Many candidate commitment rules are available: the operator's own day-ahead
-forecast, persistence and calendar rules, regressions, and machine learning.
-The question is how to combine them.
+## The management problem
+
+Grid operators must commit capacity a day ahead: a shortfall costs more than a surplus, and how much more
+depends on how well a grid can import from its neighbours. Planners must also decide where to install
+new batteries. Both decisions rest on how the available demand forecasts are combined: operators'
+own forecasts, persistence and calendar rules, regressions, a global LightGBM model and the
+pretrained foundation model Chronos.
 
 ## Research gap
 
-| Existing approach | Limitation for system-wide commitment |
+| Existing approach | Limitation |
 |---|---|
-| Per-series forecast combination / model averaging (JMA, K-fold CV, forward validation) | weights are noisy with short windows (the forecast-combination puzzle) and are chosen for accuracy, not for decision cost |
-| Pooled combination | one rule for units that face different conditions |
+| Per-series model averaging / forecast combination (JMA, K-fold CV, forward validation) | noisy weights with short windows (forecast-combination puzzle); chosen for accuracy, not decision cost |
+| Pooled combination | one rule for systems that face different conditions |
 | Quantile / general-loss model averaging, CQRA | decision-relevant loss, but one series at a time |
-| Data-driven newsvendor, predict-then-optimise | learns decisions directly, but does not combine existing forecasting systems across heterogeneous units |
+| Neural mixture-of-experts gates, FFORMA | thousands of parameters, hard to audit, no guarantees for the combined decision |
+| Data-driven newsvendor, predict-then-optimise | learns decisions, but does not combine existing forecasting systems across heterogeneous units |
 | Latent-group panel models (Bonhomme–Manresa, C-Lasso) | group regression parameters under squared loss |
+| Storage siting models | take the uncertainty that storage must absorb as given |
 
-No existing method **jointly learns latent segments of decision units and segment-specific
-combination weights by minimising the realised, unit-specific decision cost**. That is GDMA.
+No existing method **jointly learns latent segments of decision units and segment-specific combination
+weights by minimising the realised, unit-specific decision cost**, or links the resulting operational
+risk to where new storage should go. That is GDMA.
 
-## Method in one line
+## Method
 
 ```
 min over memberships g(i) in {1..G} and weights w_1..w_G in the simplex:
     sum_i sum_t  u_i (y_it - q_it'w_g(i))^+  +  o_i (q_it'w_g(i) - y_it)^+
 ```
 
-solved by a k-means-type alternation (regret-space k-means++ seeding, pooled convex weight
-step), with G chosen by a time-ordered hold-out and the one-standard-error rule.
-G = 1 gives pooled weights and G = N gives unit-specific weights.
+- k-means-type alternation with regret-space k-means++ seeding; each weight step is a small convex program
+- **soft GDMA**: w_i = (1 - kappa) w_i^unit + kappa w_segment, nesting pooled weights (G = 1),
+  unit-specific weights (kappa = 0) and shrinkage
+- G by time-ordered hold-out with the one-standard-error rule, then kappa by hold-out
+- **storage stage**: value curves of battery power from the learned rule's residual shortfalls,
+  greedy (exact) allocation of a storage budget across grid areas
 
-Theory (paper, Section 4): a finite-sample oracle inequality that separates the price of
-learning memberships (log G / T per unit) from the price of learning weights
-(G M log(NT) / NT); asymptotic optimality; recovery of the segments; and exact equivalence
-with the estimator that knows the segments.
+**Theory**: a finite-sample oracle inequality separating the price of learning memberships
+(log G / T per unit) from the price of learning weights (G M log(NT) / NT); asymptotic optimality;
+segment recovery; exact equivalence with the estimator that knows the segments.
+
+## Main results
+
+| | Soft GDMA saving vs best single forecaster |
+|---|---|
+| 46 U.S. balancing authorities (vs official forecasts) | 18–20% |
+| 125 grid areas, five continents (1.66 TW) | 17.2% |
+| vs decision-focused neural gate (6,920 parameters) | 9 percentage points |
+
+Without storage, soft GDMA is cheaper than the status quo with 60 GW of optimally sited batteries,
+and is worth 6–8 GW relative to standard combination rules. Siting a storage programme on the
+status-quo error profile loses up to 15% of its value.
 
 ## Repository layout
 
 ```
-src/gdma/core.py            estimator: losses, simplex solvers, grouped fit, G selection, benchmarks
-experiments/extract_eia.py  stream EIA-930 bulk file -> hourly demand, day-ahead forecast, interchange
-experiments/build_panel.py  cleaning, 46-BA panel, 7 candidate forecasts (incl. global LightGBM)
-experiments/backtest.py     rolling out-of-sample commitment backtest (10 methods)
-experiments/simulation.py   Monte Carlo study
-experiments/analyze.py      tables and figures for the paper
-paper/                      LaTeX manuscript (main.tex) and compiled PDF
-results/                    logs, summary tables and simulation output
+src/gdma/core.py              estimator: losses, simplex solvers, (soft) grouped fit, G selection, benchmarks
+src/gdma/storage.py           battery dispatch, value curves, budget allocation
+experiments/extract_eia.py    EIA-930 bulk file -> hourly demand, day-ahead forecast, interchange
+experiments/build_panel.py    U.S. panel (46 BAs) and seven candidate forecasts
+experiments/backtest.py       U.S. rolling backtest (and GDMA variants with --variants)
+experiments/download_global.py  Europe (Energy-Charts), Australia (AEMO), China, Taiwan, Thailand, Algeria
+experiments/build_global.py   global panel (125 areas) and candidate forecasts
+experiments/chronos_candidate.py  zero-shot Chronos-Bolt forecasts
+experiments/backtest_global.py    global rolling backtest
+experiments/neural_gate.py    decision-focused neural mixture-of-experts benchmark
+experiments/storage_siting.py battery siting
+experiments/simulation.py     Monte Carlo study
+experiments/analyze.py, analyze_global.py, sim_tables.py   tables and figures
+paper/                        LaTeX manuscript and compiled PDF
+results/                      logs, summary tables and small result files
 ```
 
 ## Reproduce
 
 ```bash
-pip install numpy scipy pandas scikit-learn lightgbm matplotlib pyarrow
+pip install numpy scipy pandas scikit-learn lightgbm matplotlib pyarrow openpyxl torch chronos-forecasting
 mkdir -p data/raw data/interim data/processed results
-curl -L https://www.eia.gov/opendata/bulk/EBA.zip -o data/raw/EBA.zip   # ~700 MB, public, no key
-python experiments/extract_eia.py
-python experiments/build_panel.py
-for w in 7 14 28 56; do python experiments/backtest.py --window $w; done
-for t in 0.5 0.8 0.9 0.95; do python experiments/backtest.py --window 28 --tau $t; done
+curl -L https://www.eia.gov/opendata/bulk/EBA.zip -o data/raw/EBA.zip       # public, no key
+python experiments/extract_eia.py && python experiments/build_panel.py
+for w in 7 14 28 56; do python experiments/backtest.py --window $w; python experiments/backtest.py --window $w --variants; done
+for t in 0.5 0.8 0.9 0.95; do python experiments/backtest.py --window 28 --tau $t; python experiments/backtest.py --window 28 --tau $t --variants; done
+python experiments/download_global.py && python experiments/build_global.py && python experiments/chronos_candidate.py
+for w in 28 14; do python experiments/backtest_global.py --window $w; python experiments/neural_gate.py --window $w; done
+python experiments/backtest_global.py --window 28 --tau 0.9
+python experiments/storage_siting.py
 python experiments/simulation.py
-python experiments/analyze.py
+python experiments/analyze.py && python experiments/analyze_global.py && python experiments/sim_tables.py
 cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
