@@ -228,3 +228,4 @@ paper/*.bbl
 paper/*.blg
 paper/*.out
 paper/*.toc
+results/*.log
