@@ -81,12 +81,13 @@ def main():
     ap.add_argument("--window", type=int, default=28)
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--epochs", type=int, default=150)
+    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2"])
     args = ap.parse_args()
-    tag = f"global_w{args.window}_tau{args.tau}"
+    tag = f"global_w{args.window}_tau{args.tau}" + ("" if args.weather == "none" else f"_weather-{args.weather}")
     torch.manual_seed(0)
     torch.set_num_threads(int(os.environ.get("THREADS", 1)))
 
-    d, Y, F, P, u, o, tau, cand, first = load_global(args.tau)
+    d, Y, F, P, u, o, tau, cand, first = load_global(args.tau, weather=args.weather)
     M, N, Dn, H = P.shape
     with np.errstate(all="ignore"):
         scale = np.nanmean(Y, axis=(1, 2))

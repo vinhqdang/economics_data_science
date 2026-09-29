@@ -60,7 +60,11 @@ def calibrate_costs(flex, tau_spec):
     return tau / (1 - tau), np.ones(N), tau
 
 
-def load_global(tau_spec, with_chronos=True):
+WEATHER_FILES = {"exact": ("Weather", "global_weather_noise0.npy"),
+                 "noise2": ("Weather", "global_weather_noise2.npy")}
+
+
+def load_global(tau_spec, with_chronos=True, weather="none"):
     """Global panel with (optionally) the Chronos candidate appended, the cost
     parameters and the candidate commitments (cached on disk per tau_spec)."""
     d = np.load(os.path.join(ROOT, "data", "processed", "global_panel.npz"), allow_pickle=True)
@@ -75,9 +79,19 @@ def load_global(tau_spec, with_chronos=True):
         C[~np.isfinite(F[0])] = np.nan
         F = np.concatenate([F, C[None]], axis=0)
         methods.append("Chronos")
+    if weather != "none":
+        name, fn = WEATHER_FILES[weather]
+        Wc = np.load(os.path.join(ROOT, "data", "processed", fn)).astype(float)
+        with np.errstate(all="ignore"):
+            fill = np.nanmean(F, axis=0)
+        Wc = np.where(np.isfinite(Wc), Wc, fill)
+        Wc[~np.isfinite(F[0])] = np.nan
+        F = np.concatenate([F, Wc[None]], axis=0)
+        methods.append(name)
     first = int(d["first_day"])
     u, o, tau = calibrate_costs(d["flex"], tau_spec)
-    pp = os.path.join(ROOT, "data", "processed", f"global_policies_{len(methods)}_{tau_spec}.npy")
+    wtag = "" if weather == "none" else f"_weather-{weather}"
+    pp = os.path.join(ROOT, "data", "processed", f"global_policies_{len(methods)}_{tau_spec}{wtag}.npy")
     if os.path.exists(pp):
         P = np.load(pp).astype(float)
     else:
@@ -92,10 +106,11 @@ def main():
     ap.add_argument("--window", type=int, default=28)
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--n_init", type=int, default=4)
+    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2"])
     args = ap.parse_args()
-    tag = f"global_w{args.window}_tau{args.tau}"
+    tag = f"global_w{args.window}_tau{args.tau}" + ("" if args.weather == "none" else f"_weather-{args.weather}")
 
-    d, Y, F, P, u, o, tau, cand, first = load_global(args.tau)
+    d, Y, F, P, u, o, tau, cand, first = load_global(args.tau, weather=args.weather)
     M, N, Dn, H = F.shape
     print("candidates:", cand, flush=True)
     with np.errstate(all="ignore"):
