@@ -61,7 +61,28 @@ The last two isolate the value of estimating the combination for the decision ra
 \end{table}
 
 Table~\ref{tab:main} contains the main result.
-\RESULTSMAIN
+Four findings stand out.
+
+\emph{First, deciding for the decision pays.}
+Soft GDMA lowers the system-wide commitment cost by 18--20\% relative to the status quo of committing on the official forecasts, and every decision-focused combination method lowers it by at least 15\%; all reductions are significant at the 1\% level.
+The forecast-then-commit methods, which combine the same seven forecasts for accuracy and then add a quantile margin, save only 3--18\%, and they are significantly more expensive than soft GDMA for every window length.
+The gap is largest when windows are short ($W=7$: 0.971 and 0.907 against 0.817), because accuracy-optimal weights are chosen without regard to the asymmetric costs and the margin estimated from one week of combined errors is noisy.
+Equal weights are the worst choice: they give weight to the naive calendar rules and raise cost by 53\%.
+
+\emph{Second, neither extreme is right.}
+Per-BA weights are expensive when windows are short (0.850 at $W=7$, 4.2\% above pooled weights), pooled weights are expensive when windows are long (0.804 at $W=56$, 0.9\% above soft GDMA), and the per-window ranking of the two reverses between $W=14$ and $W=28$.
+This is the bias--variance trade-off of Theorem~\ref{thm:oracle} in action.
+
+\emph{Third, soft GDMA is the most reliable method.}
+It has the lowest system cost for $W=14$ and $W=28$ and is within 0.1\% of the best method for $W=7$ and $W=56$; no method is significantly cheaper than soft GDMA for any window, while it is significantly cheaper than pooled weights, per-BA weights, the forecast-then-commit methods and plain GDMA for most windows.
+Its closest competitor is decision-focused shrinkage towards pooled weights, which is the special case $G=1$ of soft GDMA and is statistically indistinguishable from it; the two coincide exactly in the 57--68\% of weeks (depending on $W$) in which the hold-out rule selects a single segment.
+Plain GDMA improves significantly on pooled weights for $W\ge14$ and on per-BA weights for $W\le14$, but forcing all members of a segment onto identical weights costs 0.4--0.5\% relative to soft segments when $W\ge14$.
+Choosing $G$ by the plain hold-out minimum instead of the one-standard-error rule is worse for short windows (0.823 against 0.816 at $W=7$), confirming that parsimony matters when hold-out costs are noisy.
+
+\emph{Fourth, the savings are economically large.}
+At $W=28$ the official-forecast policy costs 0.0761 units of idle-capacity cost per MWh of demand and soft GDMA 0.0610, a saving of 0.0151 units per MWh.
+Over the 4.0 billion MWh of annual demand in our panel, and valuing idle committed capacity at an illustrative \$10 per MWh, this is roughly \$600 million a year for the system as a whole, obtained by re-weighting forecasts that the operators already produce.
+The saving is not driven by a few operators: 80\% of BAs are individually better off than under their own official forecast (last column of Table~\ref{tab:main}).
 
 \begin{table}[t]
 \centering
@@ -73,7 +94,10 @@ $^b$ Each BA's cost divided by its mean hourly demand, averaged over BAs with eq
 $^c$ Diebold--Mariano statistic; positive values: the method has higher daily system cost than soft GDMA.
 \end{table}
 
-\RESULTSSECONDARY
+Table~\ref{tab:secondary} and Figure~\ref{fig:cum} confirm the picture.
+With every BA weighted equally rather than by its size, soft GDMA and shrinkage are again the two cheapest methods, so the results are not an artefact of the three largest ISOs.
+The decision-focused methods hit the target shortfall frequency closely (11.5--12.0\% against a target of 12.5\%, the average of $1-\tau_i$), whereas the official-forecast policy and the forecast-then-commit methods fall short too often (13.5--14.5\%).
+The cumulative saving builds up steadily over six years rather than in a few episodes, and the ordering of the methods is stable after the first year.
 
 \begin{figure}[t]
 \centering
@@ -86,10 +110,16 @@ $^c$ Diebold--Mariano statistic; positive values: the method has higher daily sy
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/segments.pdf}
-\caption{Left: number of segments selected by GDMA in each weekly re-estimation ($W=28$). Right: share of re-estimations in which two BAs belong to the same segment, ordered by average-linkage clustering.}\label{fig:segments}
+\caption{Left: number of segments selected by GDMA in each weekly re-estimation ($W=28$). Right: among the weeks with $G\ge2$, share of weeks in which two BAs belong to the same segment, ordered by average-linkage clustering.}\label{fig:segments}
 \end{figure}
 
-\RESULTSSEGMENTS
+GDMA uses one segment in about two thirds of the weeks and two or more in the rest; multi-segment weeks occur in every year from 2021 onwards (Figure~\ref{fig:segments}, left).
+The co-membership matrix (right) reveals two stable segments.
+The first contains 17 BAs, among them PJM, CAISO, ISO New England, Florida Power \& Light, Arizona Public Service, Nevada Power and both PacifiCorp areas; their combinations rely almost entirely on the learned models (weights of 0.38 on the hourly regression and 0.47 on LightGBM) and put only 0.12 directly on the official forecast.
+The second contains 28 BAs, including MISO, ERCOT, the Southern Company, NYISO, TVA, Bonneville and Duke Energy, and puts 0.39 directly on the official forecast.
+Southwest Power Pool often forms a segment of its own.
+The two main segments have the same average critical ratio (0.874 and 0.873), so the segmentation is not a relabelling of cost asymmetries; nor does it follow geography or market design, since both contain ISOs and vertically integrated utilities from the East and the West.
+What separates them is how much the operator's own forecast adds to what can be learned from recent demand---information that a central planner cannot read off the organisational chart of the grid, but that GDMA extracts from the data.
 
 \subsection{Extreme events and robustness}\label{sec:robust}
 
@@ -100,7 +130,11 @@ $^c$ Diebold--Mariano statistic; positive values: the method has higher daily sy
 \input{tables/events.tex}
 \end{table}
 
-\RESULTSEVENTS
+Table~\ref{tab:events} examines three extreme episodes.
+During Winter Storm Uri and the 2023 heat wave, the decision-focused combinations cost 15--22\% less than the official-forecast policy, in line with their average performance.
+Winter Storm Elliott is different: the sudden cold snap of December 2022 was forecast much better by the operators, whose forecasts use weather information that none of our candidates sees directly, and every combination is 18--32\% more expensive than the official policy over those six days.
+Soft GDMA and shrinkage limit the damage better than pooled weights and plain GDMA (1.21 against 1.32), presumably because unit-level shrinkage lets the BAs whose official forecasts are most informative keep more weight on them.
+The episode is a reminder that combination weights learned in calm weeks cannot anticipate an abrupt regime change; adding weather-based candidates, or letting weights respond to weather warnings, is a natural extension.
 
 \begin{table}[t]
 \centering

@@ -181,14 +181,16 @@ def main():
     lab = r["labels"]
     ba = r["ba"]
     N = len(ba)
+    multi = G > 1                       # co-membership over multi-segment weeks
     co = np.zeros((N, N))
-    for L in lab:
+    for L in lab[multi]:
         co += (L[:, None] == L[None, :])
-    co /= len(lab)
+    co /= max(multi.sum(), 1)
     order = leaves_list(linkage(1 - co[np.triu_indices(N, 1)], "average"))
     fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.6), gridspec_kw=dict(width_ratios=[1, 1.25]))
     og = pd.to_datetime(days[r["origins"]])
-    axs[0].step(og, G, where="post", color="#1f4e79", lw=1)
+    axs[0].scatter(og, G + np.random.default_rng(0).uniform(-0.15, 0.15, len(G)), s=4,
+                   color="#1f4e79", alpha=0.6, lw=0)
     axs[0].set_ylabel("Selected number of segments $G$")
     axs[0].set_yticks(range(1, int(G.max()) + 1))
     im = axs[1].imshow(co[np.ix_(order, order)], cmap="Blues", vmin=0, vmax=1)
@@ -196,7 +198,7 @@ def main():
     axs[1].set_yticks(range(N))
     axs[1].set_xticklabels(ba[order], rotation=90, fontsize=4.5)
     axs[1].set_yticklabels(ba[order], fontsize=4.5)
-    fig.colorbar(im, ax=axs[1], fraction=0.046, pad=0.02, label="Share of windows in same segment")
+    fig.colorbar(im, ax=axs[1], fraction=0.046, pad=0.02, label="Share of multi-segment weeks in same segment")
     fig.tight_layout()
     fig.savefig(os.path.join(FIG, "segments.pdf"))
     plt.close(fig)
