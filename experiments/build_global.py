@@ -31,7 +31,8 @@ START, END = "2018-01-01", "2026-09-27"
 METHODS = ["Official", "Persist", "Weekly", "Mean7", "Profile3w", "HourlyReg", "LightGBM"]
 FIRST_DAY = 60
 REG_WIN, REG_EVERY = 56, 7
-LGB_WIN, LGB_EVERY = 365, 28
+LGB_WIN, LGB_EVERY = 365, 56
+LGB_MAX_ROWS = 800_000
 CHINA = ["Beijing", "Tianjin", "Hebei", "Shanxi", "Inner Mongolia", "Liaoning", "Jilin",
          "Heilongjiang", "Shanghai", "Jiangsu", "Zhejiang", "Anhui", "Fujian", "Jiangxi",
          "Shandong", "Henan", "Hubei", "Hunan", "Guangdong", "Guangxi", "Hainan", "Chongqing",
@@ -218,13 +219,15 @@ def lightgbm_forecast(Y, OF, month, dow, cont, first):
         train = np.arange(max(d0 - LGB_WIN, 21), d0)
         X, s = lgb_design(Y, OF, train, month, dow, cont)
         y = (Y[:, train, :] / s[..., None]).reshape(-1)
-        ok = np.isfinite(y) & np.isfinite(X[:, 0])
+        ok = np.flatnonzero(np.isfinite(y) & np.isfinite(X[:, 0]))
+        if len(ok) > LGB_MAX_ROWS:
+            ok = np.sort(np.random.default_rng(d0).choice(ok, LGB_MAX_ROWS, replace=False))
         model = lgb.train(params, lgb.Dataset(X[ok], y[ok], categorical_feature=[9, 10]),
                           num_boost_round=300)
         test = np.arange(d0, min(d0 + LGB_EVERY, Dn))
         Xt, st = lgb_design(Y, OF, test, month, dow, cont)
         F[:, test, :] = model.predict(Xt).reshape(N, len(test), H) * st[..., None]
-        print("  lightgbm refit at day", d0, "rows", int(ok.sum()), flush=True)
+        print("  lightgbm refit at day", d0, "rows", len(ok), flush=True)
     return F
 
 
