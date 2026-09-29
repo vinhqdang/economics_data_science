@@ -1,0 +1,53 @@
+\section{Where to install batteries}\label{sec:storage}
+
+We now solve the planning problem~\eqref{eq:siting} on the global panel.
+For each commitment rule we take its out-of-sample hourly shortfalls and surpluses ($W=28$), place a four-hour battery with 85\% round-trip efficiency in every grid area, and compute the annual value of battery power on a grid from 0 to 15\% of the area's mean demand.
+Costs are converted to money by valuing one MWh of idle committed capacity at \$10, so that a shortfall costs between \$40 and \$190 per MWh depending on the area's critical ratio; the value of battery power scales proportionally with this assumption.
+
+\subsection{Batteries do not pay for themselves on forecast errors alone}
+
+The first increment of battery power is worth \$38,000--\$46,000 per MW-year in the median area of each continent (depending on the commitment rule), and at most \$84,000 (in Great Britain).
+Annualised costs of four-hour batteries are well above this range (we use \$100,000--\$200,000 per MW-year), so the cost-optimal battery size for covering day-ahead commitment errors alone is zero in every area and for every commitment rule.
+Storage is deployed for arbitrage, capacity adequacy and the integration of renewables, and covering commitment errors is a by-product.
+The relevant planning question is therefore not whether, but \emph{where}, to place the storage that energy-transition programmes already mandate, and how that choice depends on the way operators commit.
+
+\subsection{Better forecasting substitutes for storage}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/storage_frontier.pdf}
+\caption{Annual system-wide commitment cost as a function of battery power installed and optimally sited across the 125 grid areas, for five commitment rules. Costs valued at \$10 per MWh of idle committed capacity.}\label{fig:frontier}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Storage siting on five continents. Cost of each commitment rule without storage, battery power it needs (optimally sited) to reach the cost of soft GDMA without storage, and the optimal siting of a 10\,GW storage programme.}\label{tab:storage}
+\small
+\input{tables/storage.tex}
+\par\smallskip\footnotesize $^c$ Smallest optimally sited budget, on a grid of 0.25\,GW steps up to 5\,GW and 1\,GW steps up to 60\,GW, at which the rule's cost falls to or below that of soft GDMA without storage.
+\end{table}
+
+Figure~\ref{fig:frontier} and Table~\ref{tab:storage} give the central managerial result.
+Without storage, soft GDMA commits the five continents' capacity for \$8.05 billion a year, against \$9.59 billion for the single best forecaster.
+Adding batteries lowers every curve, but the curve of the single best forecaster never reaches soft GDMA's starting point: even 60\,GW of optimally sited batteries leave it at \$8.11 billion.
+Relative to the standard ways of combining forecasts, soft GDMA is worth 6\,GW (per-area weights), 7\,GW (forecast-then-commit) and 8\,GW (pooled weights) of batteries.
+At \$150,000 per MW-year, 6--8\,GW of batteries cost \$0.9--1.2 billion a year; the re-weighting of existing forecasts that replaces them costs essentially nothing.
+
+\subsection{The siting decision depends on the commitment rule}
+
+Table~\ref{tab:storage} also shows how a 10\,GW programme should be distributed.
+Under soft GDMA, 2.5\,GW go to North America, 2.5\,GW to Europe, 0.5\,GW to Oceania and 4.4\,GW to Asia.
+If the planner instead uses the error profile of the single best forecaster, North America receives 3.7\,GW, almost 50\% more, because the status quo leaves U.S.\ operators with the largest shortfalls; the forecast-then-commit rule would send 4.3\,GW there.
+Those batteries would be in the wrong place once operations improve.
+
+\begin{table}[t]
+\centering
+\caption{Annual value (million USD) of storage programmes of different sizes when operations follow soft GDMA, by the commitment rule whose error profile was used to site the batteries.}\label{tab:siting}
+\small
+\input{tables/siting_value.tex}
+\end{table}
+
+Table~\ref{tab:siting} quantifies the cost of that mistake.
+When operations follow soft GDMA, a 1\,GW programme sited with the status-quo error profile delivers \$39 million a year instead of \$46 million, a 15\% loss; the loss is 8\% at 5\,GW, 3\% at 10\,GW and 2\% at 20\,GW, because large programmes eventually reach every area with sizeable shortfalls.
+Small, early programmes---the typical first phase of a national storage strategy---are therefore the most sensitive to the operational rule assumed at the planning stage.
+The implication for planners is sequencing: fix how forecasts are combined first, and site storage on the residual risk that remains.

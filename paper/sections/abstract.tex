@@ -1,12 +1,12 @@
 \begin{abstract}
 \noindent
-System planners who coordinate many operating units must commit resources before demand is known, and they typically have several forecasting systems for each unit.
-We propose \emph{grouped decision-focused model averaging} (GDMA), which combines the candidate forecasts of many units into commitment rules by jointly learning (i) a small number of latent segments of units and (ii) segment-specific combination weights, chosen to minimise the realised decision cost with unit-specific cost asymmetries rather than forecast error.
-A soft version shrinks each unit's own weights towards those of its segment and nests pooled weights, unit-specific weights and shrinkage as special cases.
-We derive a finite-sample oracle inequality that separates the cost of learning segment memberships from the cost of learning weights, show that GDMA is asymptotically optimal and attains the risk of the infeasible benchmark with unit-specific optimal weights when segments exist, and prove that it recovers the segments with probability approaching one.
-Monte Carlo experiments confirm these properties.
-We apply the method to day-ahead capacity commitment for 46 U.S.\ balancing authorities, which together serve 97\% of lower-48 electricity demand, using public hourly data from 2019 to September 2026.
-Over six and a half years of out-of-sample operation, soft GDMA lowers system-wide commitment cost by 18--20\% relative to committing on the operators' official forecasts, and by 3--16\% relative to combining the same forecasts for accuracy first; it is the cheapest or statistically tied with the cheapest method for every estimation window.
-The learned segments separate operators whose own forecasts carry information beyond recent demand from those for whom machine-learned corrections suffice, a distinction invisible in the organisational structure of the grid.
-\par\medskip\noindent\textbf{Keywords:} model averaging; forecast combination; decision-focused learning; latent groups; newsvendor; electricity grid; capacity commitment
+Grid operators must commit capacity a day ahead, and planners must decide where to install new batteries.
+Both decisions rest on how the many available demand forecasts---operators' own forecasts, statistical models, machine learning and pretrained foundation models---are combined.
+We propose \emph{grouped decision-focused model averaging} (GDMA), which jointly learns a small number of latent segments of decision units and segment-specific combination weights by minimising the realised decision cost, with each unit's own cost asymmetry, rather than forecast error; a soft version shrinks each unit's weights towards its segment and nests pooled weights, unit-specific weights and shrinkage.
+We prove a finite-sample oracle inequality that separates the cost of learning segment memberships from the cost of learning weights, show that GDMA is asymptotically optimal and attains the risk of the infeasible unit-specific optimum when segments exist, and prove that it recovers the segments with probability approaching one.
+A planning stage turns the residual risk of the learned rule into an optimal siting of storage.
+On 125 grid areas in North America, Europe, Oceania, Asia and Africa with an average demand of 1.66\,TW, using public hourly data from 2018 to 2026, soft GDMA lowers out-of-sample commitment cost by 17\% worldwide (18--20\% for the U.S.\ operators, relative to their official forecasts), outperforms combining the same forecasts for accuracy, and outperforms a decision-focused neural mixture-of-experts gate by nine percentage points.
+Better combination substitutes for storage: without batteries, soft GDMA is cheaper than the status quo with 60\,GW of optimally sited batteries, and it is worth 6--8\,GW relative to standard combination rules.
+Where a storage programme should go depends on the commitment rule; siting on the status-quo error profile loses up to 15\% of a small programme's value.
+\par\medskip\noindent\textbf{Keywords:} model averaging; decision-focused learning; latent groups; foundation models; capacity commitment; battery storage siting; energy management
 \end{abstract}

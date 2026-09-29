@@ -1,37 +1,37 @@
 \section{Introduction}\label{sec:intro}
 
-Large infrastructure systems are managed through many local decision units that commit resources before uncertainty resolves.
-The U.S.\ electric grid is an extreme example.
-Its lower 48 states are operated by several dozen balancing authorities---independent system operators, federal power marketing agencies, investor-owned and municipal utilities---each of which must, every day, commit enough generating capacity to meet the next day's hourly demand.
-Committing too little forces expensive real-time purchases, the activation of reserves or, in the worst case, curtailed load; committing too much means paying for capacity that sits idle.
-The cost of a shortfall is not the same everywhere: an operator embedded in a dense web of interconnections can import from its neighbours, while an isolated one cannot.
-Winter Storm Uri in February 2021, when the weakly interconnected Texas system shed load for days while better-connected neighbours coped, showed how much this asymmetry matters \citep{Busby2021}.
+Electricity systems are managed through many local decision units that commit resources before uncertainty resolves.
+Every day, each of the balancing authorities, national system operators and regional market operators that run the world's grids must commit enough capacity to meet the next day's hourly demand.
+Committing too little forces expensive real-time purchases, the activation of reserves or, in the worst case, load shedding; committing too much means paying for capacity that sits idle.
+The cost of a shortfall is not the same everywhere: an operator embedded in a dense web of interconnections can import from its neighbours, while an isolated system cannot.
+Winter Storm Uri in February 2021, when the weakly interconnected Texas grid shed load for days while better-connected neighbours coped, showed how much this asymmetry matters \citep{Busby2021}.
+At the same time, governments are committing to large battery-storage programmes, and planners must decide where those batteries should go.
 
-Every balancing authority publishes a day-ahead demand forecast, and a planner can build many more commitment rules from persistence, calendar profiles, statistical models and machine learning.
+Operators and planners do not lack forecasts.
+Operators publish their own day-ahead forecasts, simple persistence and calendar rules are always available, statistical and machine-learning models can be trained on the data, and pretrained foundation models now forecast any series zero-shot \citep{Ansari2024chronos}.
 None dominates everywhere, which makes combining them attractive.
 How to combine them is less obvious.
-The forecast-combination and model-averaging literature, starting with \citet{BatesGranger1969} and developed into an asymptotic theory by \citet{Hansen2007}, \citet{HansenRacine2012}, \citet{ZhangWanZou2013} and \citet{ZhangLiu2023}, offers two standard options when there are many series.
-One can estimate combination weights for each series separately, which respects heterogeneity but produces noisy weights when histories are short---the root of the ``forecast-combination puzzle'' that simple averages often beat estimated weights \citep{SmithWallis2009,Claeskens2016}.
-Or one can pool all series and estimate one set of weights, which is precise but imposes the same policy on units that face different conditions.
-Both options also judge a combination by its statistical accuracy, even though the planner is judged by the cost of the resulting decisions.
-The operations-management literature has shown that learning directly for the decision---the ``decision-focused'' or ``predict-then-optimise'' perspective---can be much better than first forecasting accurately and then optimising \citep{BanRudin2019,BertsimasKallus2020,ElmachtoubGrigas2022}, but this literature has not addressed the combination of existing forecasts across many heterogeneous units.
+The forecast-combination and model-averaging literature, from \citet{BatesGranger1969} to the asymptotic theory of \citet{Hansen2007}, \citet{HansenRacine2012}, \citet{ZhangWanZou2013} and \citet{ZhangLiu2023}, offers two options when there are many series.
+Weights can be estimated series by series, which respects heterogeneity but produces noisy weights when histories are short---the root of the ``forecast-combination puzzle'' that simple averages often beat estimated weights \citep{SmithWallis2009,Claeskens2016}.
+Or one set of weights can be estimated for all series, which is precise but imposes the same rule on systems that face different conditions.
+Deep learning offers a third option, a network that maps features to weights \citep{MonteroManso2020,Gong2026moe}, at the price of thousands of parameters and weights that are hard to audit.
+All three typically judge a combination by its statistical accuracy, although the planner is judged by the cost of the resulting decisions; the decision-focused literature in operations management has shown that learning directly for the decision can be much better than forecasting accurately and then optimising \citep{BanRudin2019,BertsimasKallus2020,ElmachtoubGrigas2022}.
 
-This paper proposes \emph{grouped decision-focused model averaging} (GDMA), a new method designed for this setting.
-GDMA assumes that the decision units fall into a small number of latent segments whose members are best served by the same combination of candidate rules, and estimates the segments and the segment-specific weights jointly by minimising the realised system-wide decision cost.
-The number of segments is chosen by a time-ordered hold-out rule.
-Each unit keeps its own cost parameters and its own candidate safety margins, so segment members share a \emph{rule} but not a commitment level.
-Pooled weights and unit-specific weights are the two extreme cases ($G=1$ and $G=N$).
+This paper proposes \emph{grouped decision-focused model averaging} (GDMA) and uses it to answer two management questions: how should grid operators on five continents combine the forecasts they have into day-ahead capacity commitments, and where should new batteries be installed?
+GDMA assumes that decision units fall into a small number of latent segments whose members are best served by the same combination of candidate rules, and estimates the segments and the segment-specific weights jointly by minimising the realised system-wide decision cost, in money, with each unit's own cost asymmetry.
+A soft version shrinks each unit's own weights towards those of its segment.
+The number of segments and the shrinkage intensity are chosen by a time-ordered hold-out.
+Pooled weights, unit-specific weights and shrinkage towards pooled weights are special cases, and the combined commitment is always a convex combination of commitments the operator already understands.
+A second, planning stage takes the residual shortfall risk left by the learned rule and allocates a storage budget across grid areas.
 
 We make four contributions.
 \begin{enumerate}
-\item \textbf{Method.} We formulate the joint estimation of latent segments and combination weights under an asymmetric, unit-specific decision loss, and give a $k$-means-type algorithm with regret-based seeding in which each step is a small convex program on the simplex (Section~\ref{sec:method}).
-To the best of our knowledge neither the model-averaging literature, nor the decision-focused learning literature, nor the latent-group panel literature \citep{BonhommeManresa2015,Su2016} has proposed this estimator.
-\item \textbf{Theory.} We prove a finite-sample oracle inequality that splits the estimation error into a term for learning memberships ($\log G/T$ per unit) and a term for learning weights ($GM\log(NT)/(NT)$), which formalises why grouping beats unit-specific weights when histories are short.
-We show that GDMA is asymptotically optimal and, under a segment structure, attains the risk of the infeasible benchmark in which every unit knows its own optimal weights; that it recovers the segments with probability approaching one; and that on this event it coincides exactly with an estimator told the segments (Section~\ref{sec:theory}).
-\item \textbf{Evidence.} In Monte Carlo experiments GDMA is the most cost-effective feasible method when segments exist, loses little when they do not, and recovers the segments far more accurately than clustering noisy unit-level weights (Section~\ref{sec:sim}).
-\item \textbf{Application.} Using the complete public record of hourly demand and official day-ahead forecasts of 46 U.S.\ balancing authorities from 2019 to September 2026 (EIA Form~930), we evaluate day-ahead capacity commitment over more than six years of out-of-sample operation, including Winter Storms Uri and Elliott and the summer heat waves of 2023--2025 (Section~\ref{sec:app}).
-The results quantify how much system-wide commitment cost a planner could save by combining forecasts in a decision-focused, segment-aware way, and which operators should share a policy.
+\item \textbf{Method.} We formulate the joint learning of latent segments and combination weights under an asymmetric, unit-specific decision loss, give a $k$-means-type algorithm with regret-space seeding in which every step is a small convex program, and link it to a storage-siting problem that is solved exactly by a greedy algorithm (Section~\ref{sec:method}).
+To our knowledge, neither the model-averaging, the decision-focused learning nor the latent-group panel literature \citep{BonhommeManresa2015,Su2016} has proposed this estimator.
+\item \textbf{Learning theory.} We prove a finite-sample oracle inequality that separates the cost of learning memberships ($\log G/T$ per unit) from the cost of learning weights ($GM\log(NT)/(NT)$), which formalises why grouping beats unit-specific weights when histories are short; we show that GDMA is asymptotically optimal and, under a segment structure, attains the risk of the infeasible benchmark in which every unit knows its own optimal weights; that it recovers the segments with probability approaching one; and that on this event it coincides exactly with an estimator told the segments (Section~\ref{sec:theory}).
+\item \textbf{Evidence on five continents.} On 46 U.S.\ balancing authorities with their official forecasts (Section~\ref{sec:app}) and on a global panel of 125 grid areas in North America, Europe, Oceania, Asia and Africa with an average demand of 1.66\,TW (Section~\ref{sec:global}), soft GDMA lowers the out-of-sample commitment cost by 16--20\% relative to the best single forecaster, beats combining the same forecasts for accuracy, and beats a decision-focused neural mixture-of-experts gate by 9 percentage points worldwide; a pretrained foundation model enters the candidate set on equal terms.
+\item \textbf{Storage siting.} Better commitment rules substitute for storage: without any batteries, soft GDMA is cheaper than the status quo with 60\,GW of optimally sited batteries, and it is worth 6--8\,GW relative to standard combination rules. The optimal location of a storage programme depends on the commitment rule, and siting on the status-quo error profile loses up to 15\% of a small programme's value (Section~\ref{sec:storage}).
 \end{enumerate}
 
-The paper speaks directly to the theme of this special issue: it develops a statistical method motivated by a concrete management problem, establishes its theoretical guarantees, and demonstrates its value for a decision of national scale using new, openly available data.
-Code and data-construction scripts are available from the author.
+The paper speaks to the theme of this special issue in both directions it describes: it develops a statistical learning method with guarantees, motivated by a concrete management problem, and it uses new, openly available data and models to answer a planning question of continental scale.
+Replication code and data-construction scripts are available from the author.
