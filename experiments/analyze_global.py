@@ -67,8 +67,12 @@ def dm(a, b, lag=7):
     return t, 2 * stats.norm.sf(abs(t))
 
 
-def load(W):
-    tag = f"global_w{W}_taucalibrated"
+MAIN = os.environ.get("MAIN_SUFFIX", "_weather-noise2")
+
+
+def load(W, suffix=None):
+    suffix = MAIN if suffix is None else suffix
+    tag = f"global_w{W}_taucalibrated{suffix}"
     r = dict(np.load(os.path.join(ROOT, "results", f"backtest_{tag}.npz"), allow_pickle=True))
     ng = os.path.join(ROOT, "results", f"neuralgate_{tag}.npz")
     if os.path.exists(ng):
@@ -86,7 +90,9 @@ def star(p):
 
 
 def main():
-    res = {W: load(W) for W in (28, 14) if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w{W}_taucalibrated.npz"))}
+    res = {W: load(W) for W in (28, 14) if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w{W}_taucalibrated{MAIN}.npz"))}
+    if 14 not in res and os.path.exists(os.path.join(ROOT, "results", "backtest_global_w14_taucalibrated.npz")):
+        res[14] = load(14, "")
     r = res[28]
     meth = list(r["methods"])
     C = r["daily_cost"]                       # (K, N, days)
@@ -202,7 +208,7 @@ def main():
            "GDMA-soft": ("Soft GDMA", "#1f4e79", "-")}
     fig, ax = plt.subplots(figsize=(6.2, 3.1))
     for m, (lab, c, ls) in pol.items():
-        p = os.path.join(ROOT, "results", f"storage_frontier_{m}.npy")
+        p = os.path.join(ROOT, "results", f"storage_frontier{MAIN}_{m}.npy")
         if os.path.exists(p):
             B, cost = np.load(p)
             ax.plot(B, cost / 1e3, color=c, ls=ls, lw=2 if m == "GDMA-soft" else 1.2, label=lab)
@@ -214,10 +220,11 @@ def main():
     plt.close(fig)
 
     # ---------------- storage tables ------------------------------------------
-    bp = os.path.join(ROOT, "results", "storage_budget.csv")
+    SS = MAIN.replace("_", "_", 1)
+    bp = os.path.join(ROOT, "results", f"storage_budget{SS}.csv")
     if os.path.exists(bp):
         bud = pd.read_csv(bp)
-        eq = pd.read_csv(os.path.join(ROOT, "results", "storage_equivalent.csv")).set_index("policy")
+        eq = pd.read_csv(os.path.join(ROOT, "results", f"storage_equivalent{SS}.csv")).set_index("policy")
         SL = {"Official": "Single best forecaster", "EW": "Equal weights", "Pooled": "Pooled DF",
               "PerUnit": "Per-area DF", "FTO-PerUnit": "Forecast-then-commit", "GDMA": "GDMA",
               "GDMA-soft": r"\textbf{Soft GDMA}"}
@@ -241,6 +248,47 @@ def main():
             lines.append(SL[m] + " & " + " & ".join(f"{x:.0f}" for x in v) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         open(os.path.join(TAB, "siting_value.tex"), "w").write("\n".join(lines))
+
+    fp = os.path.join(ROOT, "results", f"storage_fair{MAIN}.csv")
+    if os.path.exists(fp):
+        fr = pd.read_csv(fp)
+        rel = [c for c in fr.columns if c.startswith("relben_")]
+        fr["min_relben"] = fr[rel].min(axis=1)
+        lines = [r"\begin{tabular}{@{}lccccccccc@{}}", r"\toprule",
+                 r" & \multicolumn{2}{c}{Efficient} & \multicolumn{3}{c}{Proportional floors ($\lambda=1$)} & \multicolumn{3}{c}{Maximin} \\",
+                 r"\cmidrule(lr){2-3}\cmidrule(lr){4-6}\cmidrule(lr){7-9}",
+                 r"Budget & Value & Min.\ rel. & Value & Min.\ rel. & PoF & Value & Min.\ rel. & PoF \\",
+                 r" (GW) & (\$m/yr) & benefit$^f$ & (\$m/yr) & benefit & & (\$m/yr) & benefit & \\", r"\midrule"]
+        for B in sorted(fr.budget_gw.unique()):
+            e = fr[(fr.budget_gw == B) & (fr.floor_lambda == 0)].iloc[0]
+            f1 = fr[(fr.budget_gw == B) & (fr.floor_lambda == 1)].iloc[0]
+            mx = fr[(fr.budget_gw == B) & (fr.floor_lambda == -1)].iloc[0]
+            lines.append(f"{B:g} & {e.value_musd:.0f} & {100 * e.min_relben:.1f}\\% & {f1.value_musd:.0f} & "
+                         f"{100 * f1.min_relben:.1f}\\% & {100 * f1.price_of_fairness:.1f}\\% & {mx.value_musd:.0f} & "
+                         f"{100 * mx.min_relben:.1f}\\% & {100 * mx.price_of_fairness:.1f}\\%" + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        open(os.path.join(TAB, "storage_fair.tex"), "w").write("\n".join(lines))
+        print(fr[["budget_gw", "floor_lambda", "value_musd", "min_relben", "price_of_fairness"] + [c for c in fr.columns if c.startswith("gw_")]].round(3).to_string())
+
+    # ---------------- fairness audit and candidate-set robustness -------------
+    fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
+    specs = [("No weather (8 candidates)", ""), ("Weather, forecast error 2$^\\circ$C (main)", "_weather-noise2"),
+             ("Weather, exact (upper bound)", "_weather-exact")]
+    avail = [(n, sfx) for n, sfx in specs if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w28_taucalibrated{sfx}.npz"))]
+    lines = [r"\begin{tabular}{@{}l" + "c" * len(avail) + "@{}}", r"\toprule",
+             "Method & " + " & ".join(n for n, _ in avail) + r" \\", r"\midrule"]
+    rels = {}
+    for n, sfx in avail:
+        rr = load(28, sfx)
+        tot = rr["daily_cost"].sum(axis=(1, 2))
+        mm = list(rr["methods"])
+        rels[n] = dict(zip(mm, tot / tot[mm.index("Official")]))
+    for m in rows:
+        lines.append(LABEL[m] + " & " + " & ".join(f"{rels[n][m]:.3f}" if m in rels[n] else "--" for n, _ in avail) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(TAB, "global_specs.tex"), "w").write("\n".join(lines))
+    print("candidate-set robustness", {n: {m: round(v, 3) for m, v in d.items()} for n, d in rels.items()})
+    print("fairness", {m: {k: round(v, 3) for k, v in d.items()} for m, d in fair.items()})
 
     # ---------------- console summary ----------------------------------------
     pd.set_option("display.width", 200)
