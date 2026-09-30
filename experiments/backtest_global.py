@@ -29,8 +29,9 @@ SAVE_ORDERS = ["Official", "EW", "Pooled", "PerUnit", "Shrink", "FTO-PerUnit", "
 MAX_WINDOW = 56
 
 
-def fast_candidate_policies(Y, F, tau, first):
-    """Vectorised version of backtest.candidate_policies (identical output)."""
+def fast_candidate_policies(Y, F, tau, first, mult=None):
+    """Vectorised version of backtest.candidate_policies (identical output).
+    mult (M, N, days), if given, scales each candidate's daily margin."""
     from backtest import REL_FLOOR
     M, N, Dn, H = F.shape
     P = np.full(F.shape, np.nan, dtype=np.float32)
@@ -42,7 +43,8 @@ def fast_candidate_policies(Y, F, tau, first):
             win = rel[:, :, d - RESID_DAYS:d, :].reshape(M, N, -1)
             q = np.nanquantile(win, tau, axis=2)            # (N_tau, M, N)
             qi = q[ii, :, ii]                                # (N, M)
-            P[:, :, d, :] = F[:, :, d, :] * (1.0 + qi.T[:, :, None])
+            m = qi.T if mult is None else qi.T * mult[:, :, d]
+            P[:, :, d, :] = F[:, :, d, :] * (1.0 + m[:, :, None])
     return np.maximum(P, 0.0)
 
 
@@ -64,6 +66,21 @@ def calibrate_costs(flex, tau_spec):
 WEATHER_FILES = {"exact": ("Weather", "global_weather_noise0.npy"),
                  "noise2": ("Weather", "global_weather_noise2.npy"),
                  "gfs": ("Weather", "global_weather_gfs.npy")}
+SPREAD_DAYS = 28
+
+
+def spread_multiplier(sp):
+    """Daily margin multiplier from the GEFS ensemble spread of 2-m temperature:
+    the operating day's spread relative to its mean over the previous 28 days,
+    clipped to [0.5, 3]; 1 where the spread is not available."""
+    N, Dn = sp.shape
+    mult = np.ones((N, Dn))
+    with np.errstate(all="ignore"):
+        for d in range(SPREAD_DAYS, Dn):
+            ref = np.nanmean(sp[:, d - SPREAD_DAYS:d], axis=1)
+            r = sp[:, d] / ref
+            mult[:, d] = np.where(np.isfinite(r), np.clip(r, 0.5, 3.0), 1.0)
+    return mult
 
 
 def load_global(tau_spec, with_chronos=True, weather="none"):
@@ -81,15 +98,29 @@ def load_global(tau_spec, with_chronos=True, weather="none"):
         C[~np.isfinite(F[0])] = np.nan
         F = np.concatenate([F, C[None]], axis=0)
         methods.append("Chronos")
-    if weather != "none":
-        name, fn = WEATHER_FILES[weather]
+    def append(F, fn):
         Wc = np.load(os.path.join(ROOT, "data", "processed", fn)).astype(float)
         with np.errstate(all="ignore"):
             fill = np.nanmean(F, axis=0)
         Wc = np.where(np.isfinite(Wc), Wc, fill)
         Wc[~np.isfinite(F[0])] = np.nan
-        F = np.concatenate([F, Wc[None]], axis=0)
+        return np.concatenate([F, Wc[None]], axis=0)
+
+    mult = None
+    if weather in WEATHER_FILES:
+        name, fn = WEATHER_FILES[weather]
+        F = append(F, fn)
         methods.append(name)
+    elif weather == "plus":
+        # temperature model, temperature+humidity+wind+radiation model, and the
+        # latter with a margin that widens with the GEFS ensemble spread
+        for name, fn in [("Weather", "global_weather_gfs.npy"), ("WeatherPlus", "global_weather_plus.npy"),
+                         ("WeatherEns", "global_weather_plus.npy")]:
+            F = append(F, fn)
+            methods.append(name)
+        mult = np.ones(F.shape[:3])
+        sp = np.load(os.path.join(ROOT, "data", "processed", "global_gefs_spread_daily.npy"))
+        mult[-1] = spread_multiplier(sp)
     first = int(d["first_day"])
     u, o, tau = calibrate_costs(d["flex"], tau_spec)
     wtag = "" if weather == "none" else f"_weather-{weather}"
@@ -97,7 +128,7 @@ def load_global(tau_spec, with_chronos=True, weather="none"):
     if os.path.exists(pp):
         P = np.load(pp).astype(float)
     else:
-        P = fast_candidate_policies(Y, F, tau, first)
+        P = fast_candidate_policies(Y, F, tau, first, mult)
         np.save(pp, P)
         P = P.astype(float)
     return d, Y, F, P, u, o, tau, methods, first
@@ -108,7 +139,7 @@ def main():
     ap.add_argument("--window", type=int, default=28)
     ap.add_argument("--tau", default="calibrated")
     ap.add_argument("--n_init", type=int, default=4)
-    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2", "gfs"])
+    ap.add_argument("--weather", default="none", choices=["none", "exact", "noise2", "gfs", "plus"])
     args = ap.parse_args()
     tag = f"global_w{args.window}_tau{args.tau}" + ("" if args.weather == "none" else f"_weather-{args.weather}")
 
