@@ -1,21 +1,22 @@
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}lcccccccc@{}}
 \toprule
- & \multicolumn{3}{c}{Calibrated $\tau_i$ (main)} & \multicolumn{3}{c}{$\tau_i=0.99$ for every area} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
-Method & Total & \begin{tabular}[b]{@{}c@{}}CVaR$_{95}$\\daily\end{tabular} & \begin{tabular}[b]{@{}c@{}}Worst\\week\end{tabular} & Total & \begin{tabular}[b]{@{}c@{}}CVaR$_{95}$\\daily\end{tabular} & \begin{tabular}[b]{@{}c@{}}Worst\\week\end{tabular} \\
+ & \multicolumn{3}{c}{Calibrated $\tau_i$ (main)} & \multicolumn{2}{c}{Without first} & \multicolumn{3}{c}{$\tau_i=0.99$ for every area} \\
+ & & & & \multicolumn{2}{c}{8 weeks of each area} & & & \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-9}
+Method & Total & \begin{tabular}[b]{@{}c@{}}CVaR$_{95}$\\daily\end{tabular} & \begin{tabular}[b]{@{}c@{}}Worst\\week\end{tabular} & \begin{tabular}[b]{@{}c@{}}CVaR$_{95}$\\daily\end{tabular} & \begin{tabular}[b]{@{}c@{}}Worst\\week\end{tabular} & Total & \begin{tabular}[b]{@{}c@{}}CVaR$_{95}$\\daily\end{tabular} & \begin{tabular}[b]{@{}c@{}}Worst\\week\end{tabular} \\
 \midrule
-Reference forecaster$^a$ & 1.000 & 1.000 & 1.000 & -- & -- & -- \\
-Equal weights & 1.217 & 1.136 & 1.068 & -- & -- & -- \\
-Best single (per area) & 0.923 & 0.981 & 0.946 & -- & -- & -- \\
-Pooled DF weights & 0.902 & 0.914 & 0.919 & -- & -- & -- \\
-Per-area DF weights & 0.895 & 0.920 & 0.829 & -- & -- & -- \\
-Shrinkage to pooled & 0.888 & 0.902 & 0.845 & -- & -- & -- \\
-Two-step $k$-means & 0.884 & 0.892 & 0.853 & -- & -- & -- \\
-Quantile-regression comb. & 1.016 & 1.634 & 8.955 & -- & -- & -- \\
-Forecast-then-commit, per area & 0.988 & 1.603 & 8.968 & -- & -- & -- \\
-Forecast-then-commit, grouped & 0.966 & 1.554 & 8.995 & -- & -- & -- \\
-GDMA & 0.884 & 0.902 & 0.866 & -- & -- & -- \\
-\textbf{Soft GDMA} & 0.884 & 0.905 & 0.840 & -- & -- & -- \\
-Fair soft GDMA & 0.881 & 0.898 & 0.848 & -- & -- & -- \\
+Reference forecaster$^a$ & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & -- & -- & -- \\
+Equal weights & 1.217 & 1.136 & 1.068 & 1.114 & 1.019 & -- & -- & -- \\
+Best single (per area) & 0.923 & 0.981 & 0.946 & 0.971 & 0.905 & -- & -- & -- \\
+Pooled DF weights & 0.902 & 0.914 & 0.919 & 0.901 & 0.830 & -- & -- & -- \\
+Per-area DF weights & 0.895 & 0.920 & 0.829 & 0.908 & 0.845 & -- & -- & -- \\
+Shrinkage to pooled & 0.888 & 0.902 & 0.845 & 0.893 & 0.805 & -- & -- & -- \\
+Two-step $k$-means & 0.884 & 0.892 & 0.853 & 0.884 & 0.785 & -- & -- & -- \\
+Quantile-regression comb. & 1.016 & 1.634 & 8.955 & 1.152 & 2.316 & -- & -- & -- \\
+Forecast-then-commit, per area & 0.988 & 1.603 & 8.968 & 1.117 & 2.313 & -- & -- & -- \\
+Forecast-then-commit, grouped & 0.966 & 1.554 & 8.995 & 1.067 & 2.274 & -- & -- & -- \\
+GDMA & 0.884 & 0.902 & 0.866 & 0.893 & 0.804 & -- & -- & -- \\
+\textbf{Soft GDMA} & 0.884 & 0.905 & 0.840 & 0.895 & 0.820 & -- & -- & -- \\
+Fair soft GDMA & 0.881 & 0.898 & 0.848 & 0.888 & 0.826 & -- & -- & -- \\
 \bottomrule
 \end{tabular}

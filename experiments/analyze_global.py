@@ -192,9 +192,15 @@ def main():
         open(os.path.join(TAB, "global_tau.tex"), "w").write("\n".join(lines))
 
     # ---------------- Table: tail risk and a scarcity-level critical ratio ----
-    def tail_stats(rr, names):
+    def tail_stats(rr, names, skip_entry=False):
         mm = list(rr["methods"])
-        wd = rr["daily_cost"].sum(axis=1)                       # (K, days) world daily cost
+        dc = rr["daily_cost"]
+        if skip_entry:                                        # drop each area's first 8 weeks
+            vh = rr["valid_hours"] > 0
+            first_ = np.where(vh.any(axis=1), vh.argmax(axis=1), 0)
+            keep_ = np.arange(dc.shape[2])[None, :] >= first_[:, None] + 56
+            dc = dc * keep_[None]
+        wd = dc.sum(axis=1)                                     # (K, days) world daily cost
         k0_ = mm.index("Official")
         n = wd.shape[1] // 7 * 7
         wk = wd[:, :n].reshape(len(mm), -1, 7).sum(axis=2)
@@ -206,21 +212,26 @@ def main():
                 out_[m] = (wd[k].sum() / wd[k0_].sum(), cv(wd[k]) / cv(wd[k0_]), wk[k].max() / wk[k0_].max())
         return out_
     tail = tail_stats(r, rows)
+    tail_ne = tail_stats(r, rows, skip_entry=True)
     t99p = os.path.join(ROOT, "results", f"backtest_global_w28_tau0.99{MAIN}.npz")
     tail99 = tail_stats(np.load(t99p, allow_pickle=True), rows) if os.path.exists(t99p) else {}
     two = lambda x, y: r"\begin{tabular}[b]{@{}c@{}}" + x + r"\\" + y + r"\end{tabular}"
-    lines = [r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
-             r" & \multicolumn{3}{c}{Calibrated $\tau_i$ (main)} & \multicolumn{3}{c}{$\tau_i=0.99$ for every area} \\",
-             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
-             "Method & Total & " + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + " & Total & "
+    lines = [r"\begin{tabular}{@{}lcccccccc@{}}", r"\toprule",
+             r" & \multicolumn{3}{c}{Calibrated $\tau_i$ (main)} & \multicolumn{2}{c}{Without first} & \multicolumn{3}{c}{$\tau_i=0.99$ for every area} \\",
+             r" & & & & \multicolumn{2}{c}{8 weeks of each area} & & & \\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-9}",
+             "Method & Total & " + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + " & "
+             + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + " & Total & "
              + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + r" \\", r"\midrule"]
     fm = lambda d, m: " & ".join(f"{x:.3f}" for x in d[m]) if m in d else "-- & -- & --"
     for m in rows:
         if m in tail:
-            lines.append(LABEL[m] + " & " + fm(tail, m) + " & " + fm(tail99, m) + r" \\")
+            ne = f"{tail_ne[m][1]:.3f} & {tail_ne[m][2]:.3f}"
+            lines.append(LABEL[m] + " & " + fm(tail, m) + " & " + ne + " & " + fm(tail99, m) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     open(os.path.join(TAB, "global_tail.tex"), "w").write("\n".join(lines))
     print("tail risk", {m: np.round(v, 3).tolist() for m, v in tail.items()})
+    print("tail risk without entry weeks", {m: np.round(v, 3).tolist() for m, v in tail_ne.items()})
     print("tau 0.99", {m: np.round(v, 3).tolist() for m, v in tail99.items()})
 
     # ---------------- Table: entry (transfer) ---------------------------
