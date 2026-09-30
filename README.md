@@ -56,14 +56,17 @@ segment recovery; exact equivalence with the estimator that knows the segments.
 | | Soft GDMA saving vs best single forecaster |
 |---|---|
 | 46 U.S. balancing authorities (vs official forecasts) | 18–20% |
-| 125 grid areas, five continents (1.66 TW), with GFS weather forecasts | 18.0% (fair version 18.3%) |
+| 125 grid areas, five continents (1.66 TW), with GFS/GEFS weather forecasts | 18.7% (fair version 19.0%) |
 | vs decision-focused neural gate (~7,000 parameters) | 10 percentage points |
-| grid areas made worse off than their own best forecaster | 4% (fair version: 2%; neural gate: 33%) |
+| grid areas made worse off than their own best forecaster | 4% (fair version: 2%; neural gate: 32%) |
+| Winter Storm Elliott, excess cost over U.S. official forecasts | 3.1% (6.9% with temperature forecasts only) |
 
 Without storage, soft GDMA is cheaper than the status quo with 60 GW of optimally sited batteries,
 and is worth 5–7 GW relative to standard combination rules. Siting a storage programme on the
 status-quo error profile loses up to 15% of its value; maximin-fair siting protects the worst-served
 continent at a price of fairness of about 1%. No systematic income gradient in the benefits.
+During Winter Storm Elliott a candidate whose safety margin widens with the GEFS ensemble spread is
+8% cheaper than the operators' own forecasts on its own.
 
 ## Repository layout
 
@@ -81,6 +84,9 @@ experiments/neural_gate.py    decision-focused neural mixture-of-experts benchma
 experiments/download_weather.py   NASA POWER hourly temperature at 169 load centres
 experiments/download_gfs.py   archived NOAA GFS day-ahead temperature forecasts (2021-2026, AWS open data)
 experiments/weather_candidate.py  weather-aware LightGBM candidate (GFS forecasts / realised temperature)
+experiments/download_weather_extra.py  archived GFS humidity, wind, radiation and GEFS temperature spread
+experiments/weather_plus_candidate.py  multi-variable weather candidate and daily ensemble spread
+experiments/events_global.py  Winter Storm Elliott comparison and stand-alone candidate costs
 experiments/income.py         World Bank / IMF GDP per capita and income groups, BEA state income
 experiments/storage_siting.py battery siting (efficient, proportional floors, maximin)
 experiments/simulation.py     Monte Carlo study
@@ -101,14 +107,16 @@ for t in 0.5 0.8 0.9 0.95; do python experiments/backtest.py --window 28 --tau $
 python experiments/download_global.py && python experiments/build_global.py && python experiments/chronos_candidate.py
 python experiments/download_weather.py && python experiments/download_gfs.py
 python experiments/weather_candidate.py --source gfs && python experiments/weather_candidate.py --noise 0
+python experiments/download_weather_extra.py && python experiments/weather_plus_candidate.py
 python experiments/income.py            # needs World Bank, IMF and FRED files in data/raw/income
 for w in 28 14; do python experiments/backtest_global.py --window $w; python experiments/neural_gate.py --window $w; done
 python experiments/backtest_global.py --window 28 --weather gfs && python experiments/neural_gate.py --window 28 --weather gfs
+python experiments/backtest_global.py --window 28 --weather plus && python experiments/neural_gate.py --window 28 --weather plus
 python experiments/backtest_global.py --window 28 --weather exact
-TAG=global_w28_taucalibrated_weather-gfs python experiments/storage_siting.py
+TAG=global_w28_taucalibrated_weather-plus python experiments/storage_siting.py
 python experiments/backtest_global.py --window 28 --tau 0.9
 python experiments/storage_siting.py
 python experiments/simulation.py
-python experiments/analyze.py && python experiments/analyze_global.py && python experiments/sim_tables.py
+python experiments/analyze.py && python experiments/analyze_global.py && python experiments/events_global.py && python experiments/sim_tables.py
 cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```

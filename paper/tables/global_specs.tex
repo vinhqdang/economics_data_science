@@ -1,19 +1,19 @@
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Method & No weather & GFS forecasts (main) & Realised weather \\
+Method & \begin{tabular}[b]{@{}c@{}}No\\weather\end{tabular} & \begin{tabular}[b]{@{}c@{}}GFS\\temperature\end{tabular} & \begin{tabular}[b]{@{}c@{}}GFS/GEFS\\multi-variable\\(main)\end{tabular} & \begin{tabular}[b]{@{}c@{}}Realised\\temperature\end{tabular} \\
 \midrule
-Single best forecaster$^a$ & 1.000 & 1.000 & 1.000 \\
-Equal weights & 1.315 & 1.252 & 1.250 \\
-Best single (per area) & 0.870 & 0.863 & 0.858 \\
-Pooled DF weights & 0.872 & 0.860 & 0.850 \\
-Per-area DF weights & 0.838 & 0.829 & 0.821 \\
-Shrinkage to pooled & 0.833 & 0.824 & 0.815 \\
-Two-step $k$-means & 0.832 & 0.824 & 0.816 \\
-Forecast-then-commit, per area & 0.923 & 0.912 & 0.904 \\
-Forecast-then-commit, grouped & 0.917 & 0.907 & 0.898 \\
-Neural gate (deep MoE) & 0.918 & 0.916 & -- \\
-GDMA & 0.835 & 0.827 & 0.818 \\
-\textbf{Soft GDMA} & 0.828 & 0.820 & 0.812 \\
-Fair soft GDMA & -- & 0.817 & 0.807 \\
+Single best forecaster$^a$ & 1.000 & 1.000 & 1.000 & 1.000 \\
+Equal weights & 1.315 & 1.252 & 1.165 & 1.250 \\
+Best single (per area) & 0.870 & 0.863 & 0.860 & 0.858 \\
+Pooled DF weights & 0.872 & 0.860 & 0.854 & 0.850 \\
+Per-area DF weights & 0.838 & 0.829 & 0.822 & 0.821 \\
+Shrinkage to pooled & 0.833 & 0.824 & 0.818 & 0.815 \\
+Two-step $k$-means & 0.832 & 0.824 & 0.818 & 0.816 \\
+Forecast-then-commit, per area & 0.923 & 0.912 & 0.907 & 0.904 \\
+Forecast-then-commit, grouped & 0.917 & 0.907 & 0.903 & 0.898 \\
+Neural gate (deep MoE) & 0.918 & 0.916 & 0.909 & -- \\
+GDMA & 0.835 & 0.827 & 0.821 & 0.818 \\
+\textbf{Soft GDMA} & 0.828 & 0.820 & 0.813 & 0.812 \\
+Fair soft GDMA & -- & 0.817 & 0.810 & 0.807 \\
 \bottomrule
 \end{tabular}

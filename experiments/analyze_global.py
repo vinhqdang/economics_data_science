@@ -67,7 +67,7 @@ def dm(a, b, lag=7):
     return t, 2 * stats.norm.sf(abs(t))
 
 
-MAIN = os.environ.get("MAIN_SUFFIX", "_weather-gfs")
+MAIN = os.environ.get("MAIN_SUFFIX", "_weather-plus")
 
 
 def load(W, suffix=None):
@@ -309,9 +309,10 @@ def main():
 
     # ---------------- fairness audit and candidate-set robustness -------------
     fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
-    specs = [("No weather", ""), ("GFS temperature", "_weather-gfs"),
-             ("GFS/GEFS multi-variable", "_weather-plus"), ("Realised temperature", "_weather-exact")]
-    specs = [(n + " (main)" if sfx == MAIN else n, sfx) for n, sfx in specs]
+    specs = [(r"No\\weather", ""), (r"GFS\\temperature", "_weather-gfs"),
+             (r"GFS/GEFS\\multi-variable", "_weather-plus"), (r"Realised\\temperature", "_weather-exact")]
+    specs = [(n + r"\\(main)" if sfx == MAIN else n, sfx) for n, sfx in specs]
+    specs = [(r"\begin{tabular}[b]{@{}c@{}}" + n + r"\end{tabular}", sfx) for n, sfx in specs]
     avail = [(n, sfx) for n, sfx in specs if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w28_taucalibrated{sfx}.npz"))]
     lines = [r"\begin{tabular}{@{}l" + "c" * len(avail) + "@{}}", r"\toprule",
              "Method & " + " & ".join(n for n, _ in avail) + r" \\", r"\midrule"]

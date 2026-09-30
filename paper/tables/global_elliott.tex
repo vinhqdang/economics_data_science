@@ -1,0 +1,20 @@
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \begin{tabular}[b]{@{}c@{}}No\\weather\end{tabular} & \begin{tabular}[b]{@{}c@{}}GFS\\temperature\end{tabular} & \begin{tabular}[b]{@{}c@{}}GFS/GEFS\\multi-variable\end{tabular} & \begin{tabular}[b]{@{}c@{}}Realised\\temperature\end{tabular} \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{Combination rules}} \\
+\textbf{Soft GDMA} & 1.077 & 1.069 & 1.031 & 1.053 \\
+Fair soft GDMA & -- & 1.054 & 1.068 & 1.060 \\
+GDMA & 1.100 & 1.055 & 1.043 & 1.050 \\
+Two-step $k$-means & 1.099 & 1.033 & 1.066 & 1.108 \\
+Shrinkage to pooled & 1.083 & 1.071 & 1.040 & 1.087 \\
+Per-area DF weights & 1.084 & 1.086 & 1.040 & 1.104 \\
+Pooled DF weights & 1.133 & 1.086 & 1.081 & 1.092 \\
+Forecast-then-commit, grouped & 1.304 & 1.184 & 1.162 & 1.199 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{Weather candidates on their own}} \\
+Temperature model & -- & 1.132 & 1.132 & 1.125 \\
+Multi-variable model & -- & -- & 1.108 & -- \\
+Multi-variable, ensemble margin & -- & -- & 0.920 & -- \\
+\bottomrule
+\end{tabular}
