@@ -2,6 +2,9 @@
 
 \subsection{Design}
 
+The simulation examines the finite-sample behaviour of the estimator as it is used in the applications, with $G$ and $\kappa$ chosen on a hold-out; it does not verify the rates of Section~\ref{sec:theory}, which concern the exact minimiser for a fixed $G$.
+It is deliberately simpler than the applications: units are independent, the data are stationary, and costs are linear, so it isolates the trade-off between the noise of unit-specific weights and the bias of pooled weights.
+
 We simulate $N\in\{50,200\}$ units and $M=5$ candidate commitment rules.
 Unit $i$ has demand $y_{it}=\mu_i+x_{it}$, with $\mu_i\sim U[20,100]$ and $x_{it}$ a stationary AR(1) process with coefficient 0.5 and standard deviation 5, and critical ratio $\tau_i\sim U[0.6,0.95]$ ($u_i=\tau_i/(1-\tau_i)$, $o_i=1$).
 Candidate $m$ forecasts $f_{itm}=y_{it}-e_{itm}$, where the errors follow AR(1) processes with coefficient 0.5 and innovations with unit-specific scales $s_{im}$ and skewness signs $k_{im}\in\{-1,0,+1\}$ (a centred gamma distribution for $\pm1$, a normal distribution for 0).
