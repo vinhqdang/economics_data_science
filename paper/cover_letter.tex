@@ -1,0 +1,28 @@
+\documentclass[11pt]{letter}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\signature{Quang-Vinh Dang\\British University Vietnam, Hung Yen, Vietnam\\\href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn} \quad ORCID 0000-0002-3877-8024}
+\address{}
+\date{\today}
+
+\begin{document}
+\begin{letter}{The Guest Editors\\Special Issue ``Economics and Management Empowered by Data Science''\\Journal of Management Science and Engineering}
+
+\opening{Dear Guest Editors,}
+
+I submit the manuscript ``From Forecasts to Batteries: Grouped Decision-Focused Model Averaging for Capacity Commitment and Storage Siting on Five Continents'' for consideration in the special issue ``Economics and Management Empowered by Data Science''.
+
+The paper addresses two decisions that electricity-system managers take repeatedly: how much capacity to commit a day ahead, and where to install new battery storage. Operators already have many demand forecasts, from their own systems to machine-learning models, a pretrained foundation model and models driven by archived numerical weather forecasts. The question is how to combine them into commitments, and how the resulting operational risk should inform storage investment.
+
+The paper proposes grouped decision-focused model averaging (GDMA). It learns latent segments of grid areas and segment-specific combination weights by minimising the realised, area-specific commitment cost rather than forecast error. It proves a finite-sample oracle inequality, asymptotic optimality and segment recovery, and links the learned rule to an exact greedy storage-siting problem with efficient and fair variants. On 125 grid areas in North America, Europe, Oceania, Asia and Africa, using only public data from 2018 to 2026, the soft version of GDMA lowers out-of-sample commitment cost by 19\% relative to the best single forecaster and outperforms a decision-focused neural mixture-of-experts benchmark. A fairness audit shows that it makes few areas worse off and has no systematic income gradient. Improving the commitment rule is worth several gigawatts of batteries, and it changes where a storage programme should be sited.
+
+I believe the paper fits the special issue because it develops a statistical learning method with guarantees for a concrete management problem, and uses large public datasets to answer a planning question at continental scale.
+
+The manuscript is original, has not been published, and is not under consideration by any other journal. All data are public, and the code that reproduces every result is available in a public repository. There are no competing interests.
+
+\closing{Yours sincerely,}
+
+\end{letter}
+\end{document}
