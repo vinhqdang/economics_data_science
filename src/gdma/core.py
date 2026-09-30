@@ -127,26 +127,27 @@ def fit_weights_exact(Q, y, u, o):
 
 
 def fit_quantile_regression(X, y, tau):
-    """Linear quantile regression of y on [1, X] at level tau (Koenker-Bassett),
-    solved exactly by linear programming; unconstrained coefficients."""
+    """Linear quantile regression of y on [1, X] at level tau (Koenker-Bassett)
+    with a free intercept and non-negative slopes, solved exactly by linear
+    programming; the sign constraint keeps the combination from extrapolating
+    wildly when the regressors are highly collinear."""
     from scipy.optimize import linprog
     from scipy import sparse
     n, k = X.shape
-    Z = np.column_stack([np.ones(n), X])
-    p = k + 1
-    A = sparse.hstack([sparse.csr_matrix(Z), -sparse.csr_matrix(Z), sparse.eye(n), -sparse.eye(n)]).tocsr()
-    c = np.r_[np.zeros(2 * p), np.full(n, tau), np.full(n, 1 - tau)]
+    one = sparse.csr_matrix(np.ones((n, 1)))
+    A = sparse.hstack([one, -one, sparse.csr_matrix(X), sparse.eye(n), -sparse.eye(n)]).tocsr()
+    c = np.r_[0.0, 0.0, np.zeros(k), np.full(n, tau), np.full(n, 1 - tau)]
     r = linprog(c, A_eq=A, b_eq=y, bounds=(0, None), method="highs")
     if r.x is None:
         return None
-    return r.x[:p] - r.x[p:2 * p]
+    return np.r_[r.x[0] - r.x[1], r.x[2:2 + k]]
 
 
 def qr_combination_orders(F, Y, tau, days_fit, days_out):
     """Quantile-regression combination benchmark: for each unit, regress
     demand on the M point forecasts at its critical ratio tau_i over the fitting
-    days and commit the fitted quantile (Wang et al., 2019, without the simplex
-    constraint).  F is (M, N, Dn, H) point forecasts, Y is (N, Dn, H)."""
+    days (free intercept, non-negative slopes that need not sum to one) and
+    commit the fitted quantile, capped at three times the largest forecast.  F is (M, N, Dn, H) point forecasts, Y is (N, Dn, H)."""
     M, N, Dn, H = F.shape
     out = np.full((N, len(days_out), H), np.nan)
     for i in range(N):
@@ -162,9 +163,11 @@ def qr_combination_orders(F, Y, tau, days_fit, days_out):
         b = fit_quantile_regression(X[ok][:, keep], y[ok], tau[i])
         if b is None:
             continue
-        Xo = F[:, i, days_out, :].reshape(M, -1).T[:, keep]
-        out[i] = (b[0] + Xo @ b[1:]).reshape(len(days_out), H)
-    return np.maximum(out, 0.0)
+        Xo = F[:, i, days_out, :].reshape(M, -1).T
+        pred = b[0] + Xo[:, keep] @ b[1:]
+        cap = 3.0 * np.nanmax(Xo, axis=1)                  # guard against extrapolation
+        out[i] = np.clip(pred, 0.0, cap).reshape(len(days_out), H)
+    return out
 
 
 # --------------------------------------------------------------------------
