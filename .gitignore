@@ -235,3 +235,6 @@ results/orders_*.npz
 data/processed/*.npy
 results/neuralgate_orders_*.npy
 results/gfs_queue_status.txt
+
+# pipeline progress markers (run state)
+results/pipeline/
