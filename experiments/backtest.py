@@ -136,7 +136,8 @@ def main():
         win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
-        scale = np.nanmean(Y[:, win], axis=(1, 2)) + 1e-8     # causal loss scale
+        with np.errstate(all="ignore"):
+            scale = np.nan_to_num(np.nanmean(Y[:, win], axis=(1, 2)), nan=1.0) + 1e-8   # causal loss scale
         Qo = P[:, :, out, :]                                   # (M, N, len, H)
         comb = lambda Wn: np.einsum("mnlh,nm->nlh", Qo, Wn)
 
@@ -226,7 +227,8 @@ def run_variants(args, tag):
         win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
-        scale = np.nanmean(Y[:, win], axis=(1, 2)) + 1e-8     # causal loss scale
+        with np.errstate(all="ignore"):
+            scale = np.nan_to_num(np.nanmean(Y[:, win], axis=(1, 2)), nan=1.0) + 1e-8   # causal loss scale
         Qo = P[:, :, out, :]
         g = select_grouped(Q, y, G_MAX, u, o, scale=scale, n_init=args.n_init,
                            init_labels=prev, rule="min")

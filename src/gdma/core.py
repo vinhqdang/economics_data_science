@@ -252,7 +252,9 @@ def fit_grouped(Q, Y, G, u=None, o=None, loss="newsvendor", scale=None,
             for _ in range(1, G):
                 regret = C_all[:, centres].min(axis=1) - own
                 p = np.maximum(regret, 0) + 1e-12
-                centres.append(rng.choice(N, p=p / p.sum()))
+                ok = np.isfinite(p) & (p >= 0)
+                p = np.where(ok, p, 0.0)
+                centres.append(rng.choice(N, p=p / p.sum()) if p.sum() > 0 else int(rng.integers(N)))
             W = W_unit[centres].copy()
         labels = None
         for _ in range(max_iter):
