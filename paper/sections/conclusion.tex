@@ -14,7 +14,7 @@ Because GDMA only re-weights forecasts that operators already produce, it can be
 \paragraph{Who would adopt it.}
 The grouping needs someone who sees many units at once.
 Natural adopters are organisations that already coordinate several operators---a regional transmission organisation computing rules for its member balancing authorities, the regional coordination centres of European transmission system operators, the market operator of a multi-region market such as AEMO---and forecasting-service providers or regulators that work with many utilities.
-The data requirement is modest: for each unit and window, the realised costs of the candidate rules, which can be computed locally, so units need not share raw demand or their own forecasts to take part.
+The data requirement is each unit's candidate commitments and realised demand over the estimation window, which such coordinators typically hold already; units that cannot share them could keep their data and exchange only the gradients of their own cost with respect to the shared weights, as in federated learning.
 The rules are auditable because each unit's commitment remains a convex combination of commitments it already understands, and the segment memberships can be discussed with the operators concerned.
 Operators remain responsible for reliability; GDMA is a way to set the day-ahead commitment that feeds their existing processes, not a replacement for reserve procurement or unit commitment.
 
