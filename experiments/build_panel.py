@@ -104,7 +104,7 @@ def lightgbm_forecast(Y, OF, month, dow):
     F = np.full(Y.shape, np.nan)
     params = dict(objective="l2", learning_rate=0.05, num_leaves=63, min_data_in_leaf=100,
                   feature_fraction=0.9, bagging_fraction=0.7, bagging_freq=1,
-                  verbose=-1, seed=0, num_threads=4)
+                  verbose=-1, seed=0, num_threads=int(os.environ.get("OMP_NUM_THREADS", 4)))
     for d0 in range(FIRST_DAY, Dn, LGB_EVERY):
         train = np.arange(max(d0 - INFO_LAG + 1 - LGB_WIN, 21), d0 - INFO_LAG + 1)
         X, s = lgb_design(Y, OF, train, month, dow)
