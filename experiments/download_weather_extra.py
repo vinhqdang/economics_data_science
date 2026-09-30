@@ -49,7 +49,11 @@ def fetch_fields(base, matches):
                         with tempfile.NamedTemporaryFile(suffix=".grb2") as f:
                             f.write(data)
                             f.flush()
-                            out[name] = pygrib.open(f.name)[1].values.astype(np.float32)
+                            grbs = pygrib.open(f.name)
+                            try:
+                                out[name] = np.array(grbs[1].values, dtype=np.float32)
+                            finally:
+                                grbs.close()
                         break
                     except Exception:
                         time.sleep(1 + attempt)
