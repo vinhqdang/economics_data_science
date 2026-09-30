@@ -1,26 +1,32 @@
 """Clean EIA-930 data and build day-ahead candidate forecasts per balancing authority.
 
-Decision problem: before each (UTC) operating day d, the operator of balancing
-authority i commits hourly capacity q_{i,d,h}, h = 0..23, using demand observed
-up to the end of day d-1 and its own published day-ahead forecast for day d.
+Decision problem: on the morning of day d-1, before the day-ahead gate
+closure, the operator of balancing authority i commits hourly capacity
+q_{i,d,h}, h = 0..23, for (UTC) operating day d, using demand observed up to
+the end of day d-2 (timing.INFO_LAG) and its own day-ahead forecast for day d.
 
-Candidate forecasts (M = 7):
+Candidate forecasts (M = 7), L = INFO_LAG = 2:
   0 Official   the BA's own day-ahead demand forecast (EIA-930 'DF')
-  1 Persist    same hour of day d-1
+  1 Persist    same hour of day d-L
   2 Weekly     same hour of day d-7
-  3 Mean7      mean of the same hour over days d-1..d-7
+  3 Mean7      mean of the same hour over days d-L..d-L-6
   4 Profile3w  mean of the same hour on days d-7, d-14, d-21
-  5 HourlyReg  BA-and-hour specific regression on (d-1, d-7, official, weekday),
+  5 HourlyReg  BA-and-hour specific regression on (d-L, d-7, official, weekday),
                rolling 56-day window, refitted weekly
   6 LightGBM   one global gradient-boosting model across BAs and hours on
                scaled lags, calendar and the official forecast; refitted every
                28 days on the preceding 365 days
+Every training window ends at day d0-L for forecasts made at origin d0.
 Output: data/processed/panel.npz
 """
 import os
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+from timing import INFO_LAG  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 REGIONS = {"US48", "CAL", "CAR", "CENT", "FLA", "MIDA", "MIDW", "NE", "NW", "NY",
@@ -33,9 +39,10 @@ LGB_WIN, LGB_EVERY = 365, 28
 
 
 def clean(s, ref):
-    """Drop non-positive values and values implausibly far from a rolling median."""
+    """Drop non-positive values and values implausibly far from the median of
+    the preceding week (a one-sided filter, so no future data are used)."""
     s = s.where(s > 0)
-    med = ref.rolling(24 * 7, center=True, min_periods=24).median()
+    med = ref.rolling(24 * 7, min_periods=24).median()
     s = s.where((s > 0.3 * med) & (s < 3.0 * med))
     return s.interpolate(limit=3, limit_area="inside")
 
@@ -51,7 +58,7 @@ def regression_forecast(Y, OF):
     F = np.full(Y.shape, np.nan)
     dow = np.arange(Dn) % 7
     for d0 in range(FIRST_DAY - REG_WIN, Dn, REG_EVERY):
-        train = np.arange(max(d0 - REG_WIN, 21), d0)
+        train = np.arange(max(d0 - INFO_LAG + 1 - REG_WIN, 21), d0 - INFO_LAG + 1)
         test = np.arange(d0, min(d0 + REG_EVERY, Dn))
         if len(train) < 28:
             continue
@@ -59,7 +66,7 @@ def regression_forecast(Y, OF):
             for h in range(H):
                 def design(days):
                     wk = (dow[days][:, None] == np.arange(1, 7)).astype(float)
-                    return np.column_stack([np.ones(len(days)), Y[i, days - 1, h],
+                    return np.column_stack([np.ones(len(days)), Y[i, days - INFO_LAG, h],
                                             Y[i, days - 7, h], OF[i, days, h], wk])
                 X, y = design(train), Y[i, train, h]
                 ok = np.isfinite(X).all(1) & np.isfinite(y)
@@ -72,15 +79,16 @@ def regression_forecast(Y, OF):
 
 def lgb_design(Y, OF, days, month, dow):
     """Feature matrix for all (BA, day in days, hour) cells, demand scaled by the
-    BA's mean over the previous 7 days."""
+    BA's mean over the last 7 known days."""
     N, _, H = Y.shape
-    s = np.nanmean(Y[:, days[:, None] - np.arange(1, 8)[None, :], :], axis=(2, 3))  # (N, len)
+    s = np.nanmean(Y[:, days[:, None] - np.arange(INFO_LAG, INFO_LAG + 7)[None, :], :], axis=(2, 3))
+    L = INFO_LAG
     feats = [
-        Y[:, days - 1, :] / s[..., None],
+        Y[:, days - L, :] / s[..., None],
         Y[:, days - 7, :] / s[..., None],
         Y[:, days - 14, :] / s[..., None],
-        np.repeat(np.nanmax(Y[:, days - 1, :], axis=2)[..., None], H, 2) / s[..., None],
-        np.repeat(np.nanmean(Y[:, days - 1, :], axis=2)[..., None], H, 2) / s[..., None],
+        np.repeat(np.nanmax(Y[:, days - L, :], axis=2)[..., None], H, 2) / s[..., None],
+        np.repeat(np.nanmean(Y[:, days - L, :], axis=2)[..., None], H, 2) / s[..., None],
         OF[:, days, :] / s[..., None],
         np.broadcast_to(np.arange(H), (N, len(days), H)).astype(float),
         np.broadcast_to(dow[days][None, :, None], (N, len(days), H)).astype(float),
@@ -98,7 +106,7 @@ def lightgbm_forecast(Y, OF, month, dow):
                   feature_fraction=0.9, bagging_fraction=0.7, bagging_freq=1,
                   verbose=-1, seed=0, num_threads=4)
     for d0 in range(FIRST_DAY, Dn, LGB_EVERY):
-        train = np.arange(max(d0 - LGB_WIN, 21), d0)
+        train = np.arange(max(d0 - INFO_LAG + 1 - LGB_WIN, 21), d0 - INFO_LAG + 1)
         X, s = lgb_design(Y, OF, train, month, dow)
         y = (Y[:, train, :] / s[..., None]).reshape(-1)
         ok = np.isfinite(y) & np.isfinite(X[:, 0])
@@ -119,7 +127,7 @@ def main():
     D, DF, TI = D.reindex(idx), DF.reindex(idx), TI.reindex(idx)
     cols = [c for c in D.columns if c not in REGIONS and c in DF.columns]
     Dc = pd.DataFrame({c: clean(D[c], D[c]) for c in cols})
-    DFc = pd.DataFrame({c: clean(DF[c], Dc[c]) for c in cols})
+    DFc = pd.DataFrame({c: clean(DF[c], DF[c]) for c in cols})     # own history only
     keep = [c for c in cols if Dc[c].notna().mean() >= 0.97 and DFc[c].notna().mean() >= 0.93
             and Dc[c].mean() >= 50
             and (DFc[c] - Dc[c]).abs().median() / Dc[c].median() < 0.15]
@@ -135,9 +143,9 @@ def main():
     F = np.full((len(METHODS), N, Dn, H), np.nan)
     F[0] = OF
     lag = lambda k: np.concatenate([np.full((N, k, H), np.nan), Y[:, :-k]], axis=1)
-    F[1] = lag(1)
+    F[1] = lag(INFO_LAG)
     F[2] = lag(7)
-    F[3] = np.nanmean(np.stack([lag(k) for k in range(1, 8)]), axis=0)
+    F[3] = np.nanmean(np.stack([lag(k) for k in range(INFO_LAG, INFO_LAG + 7)]), axis=0)
     F[4] = np.nanmean(np.stack([lag(7), lag(14), lag(21)]), axis=0)
     print("regression ...", flush=True)
     F[5] = regression_forecast(Y, OF)
@@ -145,6 +153,8 @@ def main():
     F[6] = lightgbm_forecast(Y, OF, month, dow)
     F[:, :, :FIRST_DAY] = np.nan
     # a missing candidate value is replaced by the mean of the available ones
+    print("share of hours with the official forecast imputed:",
+          round(float((~np.isfinite(F[0][:, FIRST_DAY:]) & np.isfinite(Y[:, FIRST_DAY:])).mean()), 4))
     fill = np.nanmean(F, axis=0)
     F = np.where(np.isfinite(F), F, fill[None])
     F = np.maximum(F, 0.0)

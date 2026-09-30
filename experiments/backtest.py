@@ -14,9 +14,10 @@ import numpy as np
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
+from timing import INFO_LAG, trailing_mean  # noqa: E402
 from gdma.core import (newsvendor_cost, fit_weights, fit_per_unit, select_grouped,  # noqa: E402
                        fit_kmeans_two_step, cost_matrix, fit_grouped,
-                       select_soft_grouped)
+                       select_soft_grouped, holdout_split, one_se, qr_combination_orders)
 
 RESID_DAYS = 28      # window for the residual quantile of each candidate policy
 STEP = 7             # re-estimation frequency (days)
@@ -44,17 +45,27 @@ def calibrate_costs(flex, tau_spec):
 REL_FLOOR = 0.2     # floor of the relative-error denominator, share of mean demand
 
 
+def rel_errors(Y, F):
+    """Relative errors (y - f) / max(f, REL_FLOOR * mean demand of the previous
+    7 days), so that an implausibly small forecast cannot produce an unbounded
+    margin; the floor uses only demand known before the day."""
+    floor = REL_FLOOR * trailing_mean(Y)
+    return (Y[None] - F) / np.maximum(F, floor[None, :, :, None])
+
+
+def resid_window(d):
+    """Days whose realised errors are known when committing for day d."""
+    return np.arange(d - INFO_LAG + 1 - RESID_DAYS, d - INFO_LAG + 1)
+
+
 def candidate_policies(Y, F, tau, first):
     """q^{(m)}_{i,d,h} = f^{(m)}_{i,d,h} (1 + Qhat_tau_i(relative residuals of m
-    over days d-28..d-1)).  Relative errors are taken with respect to
-    max(f, REL_FLOOR * mean demand of the BA), so that an implausibly small
-    forecast cannot produce an unbounded margin."""
+    over the RESID_DAYS days ending at d - INFO_LAG))."""
     M, N, Dn, H = F.shape
     P = np.full(F.shape, np.nan)
-    floor = REL_FLOOR * np.nanmean(Y[:, first:], axis=(1, 2))
-    rel = (Y[None] - F) / np.maximum(F, floor[None, :, None, None])
-    for d in range(first + RESID_DAYS, Dn):
-        win = rel[:, :, d - RESID_DAYS:d, :].reshape(M, N, -1)
+    rel = rel_errors(Y, F)
+    for d in range(first + RESID_DAYS + INFO_LAG, Dn):
+        win = rel[:, :, resid_window(d), :].reshape(M, N, -1)
         for i in range(N):
             qi = np.nanquantile(win[:, i], tau[i], axis=1)          # (M,)
             P[:, i, d, :] = F[:, i, d, :] * (1.0 + qi[:, None])
@@ -72,25 +83,25 @@ def window_arrays(A, Y, days):
     return Q, y
 
 
-def fto_orders(F, Y, W, labels, tau, days_win, days_out):
+def fto_orders(F, Y, W, labels, tau, rd, days_out):
     """Forecast-then-order: combine point forecasts with weights W[labels], then
     add the tau-quantile of the combined forecast's relative residuals over the
-    last RESID_DAYS days of the window."""
+    days rd -- the same RESID_DAYS days before the decision that set the margins
+    of the candidate policies, whatever the estimation window."""
     N = Y.shape[0]
-    rd = days_win[-RESID_DAYS:]
     out = np.empty((N, len(days_out), Y.shape[2]))
+    floor = REL_FLOOR * trailing_mean(Y)
     for i in range(N):
         w = W[labels[i]]
         fc = np.tensordot(w, F[:, i, rd, :], axes=1)
-        floor = REL_FLOOR * np.nanmean(Y[i])
-        rel = ((Y[i, rd, :] - fc) / np.maximum(fc, floor)).ravel()
+        rel = ((Y[i, rd, :] - fc) / np.maximum(fc, floor[i, rd, None])).ravel()
         qi = np.nanquantile(rel, tau[i])
         out[i] = np.tensordot(w, F[:, i, days_out, :], axes=1) * (1 + qi)
     return np.maximum(out, 0.0)
 
 
 METHOD_NAMES = ["Official", "EW", "Select", "Pooled", "PerBA", "Shrink", "KMeans2S",
-                "FTO-PerBA", "FTO-Grouped", "GDMA"]
+                "FTO-PerBA", "FTO-Grouped", "GDMA", "QR"]
 
 
 def main():
@@ -112,9 +123,9 @@ def main():
     M, N, Dn, H = F.shape
     u, o, tau = calibrate_costs(d["flex"], args.tau)
     P = candidate_policies(Y, F, tau, first)
-    scale = np.nanmean(Y[:, first:], axis=(1, 2))
+    scale_full = np.nanmean(Y[:, first:], axis=(1, 2))     # for reporting only
 
-    start = first + RESID_DAYS + MAX_WINDOW
+    start = first + RESID_DAYS + MAX_WINDOW + INFO_LAG
     origins = np.arange(start, Dn, STEP)
     K = len(METHOD_NAMES)
     orders = np.full((K, N, Dn, H), np.nan)
@@ -122,9 +133,10 @@ def main():
     prev_labels = None
     t0 = time.time()
     for n, d0 in enumerate(origins):
-        win = np.arange(d0 - args.window, d0)
+        win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
+        scale = np.nanmean(Y[:, win], axis=(1, 2)) + 1e-8     # causal loss scale
         Qo = P[:, :, out, :]                                   # (M, N, len, H)
         comb = lambda Wn: np.einsum("mnlh,nm->nlh", Qo, Wn)
 
@@ -138,30 +150,32 @@ def main():
         orders[4][:, out] = comb(W_unit)
 
         # shrinkage of unit weights towards the pooled weights; kappa by hold-out
-        T1 = int(np.ceil(2 / 3 * Q.shape[1]))
-        Wa = fit_per_unit(Q[:, :T1], y[:, :T1], u, o, scale=scale)
-        pa = fit_grouped(Q[:, :T1], y[:, :T1], 1, u, o, scale=scale)["W"][0]
+        fi, vi = holdout_split(Q.shape[1])
+        Wa = fit_per_unit(Q[:, fi], y[:, fi], u, o, scale=scale)
+        pa = fit_grouped(Q[:, fi], y[:, fi], 1, u, o, scale=scale)["W"][0]
         kappas = np.linspace(0, 1, 5)
-        sc = [np.diag(cost_matrix(Q[:, T1:], y[:, T1:], (1 - k) * Wa + k * pa, u, o)).sum()
+        sc = [np.diag(cost_matrix(Q[:, vi], y[:, vi], (1 - k) * Wa + k * pa, u, o)).sum()
               for k in kappas]
         kap = kappas[int(np.argmin(sc))]
         orders[5][:, out] = comb((1 - kap) * W_unit + kap * pooled)
 
-        # two-step: k-means on unit weights, G by the same hold-out rule
+        # two-step: k-means on unit weights, G by the same hold-out and 1SE rule
         sc = []
         for G in range(1, G_MAX + 1):
-            f = fit_kmeans_two_step(Q[:, :T1], y[:, :T1], G, u, o, scale=scale, W_unit=Wa)
-            sc.append(cost_matrix(Q[:, T1:], y[:, T1:], f["W"], u, o)[np.arange(N), f["labels"]].sum())
-        Gk = int(np.argmin(sc)) + 1
+            f = fit_kmeans_two_step(Q[:, fi], y[:, fi], G, u, o, scale=scale, W_unit=Wa)
+            sc.append(cost_matrix(Q[:, vi], y[:, vi], f["W"], u, o)[np.arange(N), f["labels"]])
+        Gk = one_se(sc) + 1
         km = fit_kmeans_two_step(Q, y, Gk, u, o, scale=scale, W_unit=W_unit)
         orders[6][:, out] = comb(km["W"][km["labels"]])
 
         # forecast-then-order: squared-error weights on point forecasts
         Fq, fy = window_arrays(F, Y, win)
         Wf = fit_per_unit(Fq, fy, loss="squared", scale=scale)
-        orders[7][:, out] = fto_orders(F, Y, Wf, np.arange(N), tau, win, out)
+        orders[7][:, out] = fto_orders(F, Y, Wf, np.arange(N), tau, resid_window(d0), out)
         gf = select_grouped(Fq, fy, G_MAX, loss="squared", scale=scale, n_init=args.n_init)
-        orders[8][:, out] = fto_orders(F, Y, gf["W"], gf["labels"], tau, win, out)
+        orders[8][:, out] = fto_orders(F, Y, gf["W"], gf["labels"], tau, resid_window(d0), out)
+        # quantile-regression combination of the point forecasts at tau_i
+        orders[10][:, out] = qr_combination_orders(F, Y, tau, win, out)
 
         # proposed: grouped decision-focused model averaging
         g = select_grouped(Q, y, G_MAX, u, o, scale=scale, n_init=args.n_init, init_labels=prev_labels)
@@ -183,7 +197,7 @@ def main():
     np.savez_compressed(os.path.join(ROOT, "results", f"backtest_{tag}.npz"),
                         daily_cost=cost.sum(axis=3), short_hours=short.sum(axis=3),
                         valid_hours=valid.sum(axis=2), methods=np.array(METHOD_NAMES),
-                        eval_days=ev, tau=tau, u=u, o=o, scale=scale, ba=d["ba"],
+                        eval_days=ev, tau=tau, u=u, o=o, scale=scale_full, ba=d["ba"],
                         G=np.array(hist["G"]), labels=np.array(hist["labels"]),
                         W=np.array(hist["W"]), G_fto=np.array(hist["G_fto"]),
                         kappa=np.array(hist["kappa"]), G_km=np.array(hist["G_km"]),
@@ -202,16 +216,17 @@ def run_variants(args, tag):
     M, N, Dn, H = F.shape
     u, o, tau = calibrate_costs(d["flex"], args.tau)
     P = candidate_policies(Y, F, tau, first)
-    scale = np.nanmean(Y[:, first:], axis=(1, 2))
-    start = first + RESID_DAYS + MAX_WINDOW
+    scale_full = np.nanmean(Y[:, first:], axis=(1, 2))     # for reporting only
+    start = first + RESID_DAYS + MAX_WINDOW + INFO_LAG
     origins = np.arange(start, Dn, STEP)
     names = ["GDMA-min", "GDMA-soft"]
     orders = np.full((2, N, Dn, H), np.nan)
     Gs, Gsoft, ksoft, prev, prev2 = [], [], [], None, None
     for n, d0 in enumerate(origins):
-        win = np.arange(d0 - args.window, d0)
+        win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
+        scale = np.nanmean(Y[:, win], axis=(1, 2)) + 1e-8     # causal loss scale
         Qo = P[:, :, out, :]
         g = select_grouped(Q, y, G_MAX, u, o, scale=scale, n_init=args.n_init,
                            init_labels=prev, rule="min")

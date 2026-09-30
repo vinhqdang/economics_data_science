@@ -24,6 +24,7 @@ import pandas as pd
 import lightgbm as lgb
 
 from build_panel import clean, REGIONS
+from timing import INFO_LAG  # noqa: F401
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 RAW = os.path.join(ROOT, "data", "raw", "global")
@@ -60,7 +61,7 @@ def load_us(idx):
     keep = list(us["ba"])
     names = [str(n).replace("Demand for ", "").split(", hourly")[0] for n in us["names"]]
     dem = pd.DataFrame({c: clean(D[c], D[c]) for c in keep})
-    fc = pd.DataFrame({c: clean(DF[c], dem[c]) for c in keep})
+    fc = pd.DataFrame({c: clean(DF[c], DF[c]) for c in keep})     # own history only
     ti = TI.reindex(columns=keep).loc["2019"]
     flex = ((ti.quantile(0.95) - ti.quantile(0.05)) / dem.loc["2019"].mean()).fillna(0).values
     meta = [dict(code=f"US-{c}", name=n, continent="North America", flex=f)
@@ -168,7 +169,7 @@ def regression_forecast(Y, OF, first):
     dow = np.arange(Dn) % 7
     has_of = np.isfinite(OF).any(axis=(1, 2))
     for d0 in range(first, Dn, REG_EVERY):
-        train = np.arange(max(d0 - REG_WIN, 21), d0)
+        train = np.arange(max(d0 - INFO_LAG + 1 - REG_WIN, 21), d0 - INFO_LAG + 1)
         test = np.arange(d0, min(d0 + REG_EVERY, Dn))
         for i in range(N):
             if not np.isfinite(Y[i, train]).any():
@@ -176,7 +177,7 @@ def regression_forecast(Y, OF, first):
             for h in range(H):
                 def design(days):
                     wk = (dow[days][:, None] == np.arange(1, 7)).astype(float)
-                    cols = [np.ones(len(days)), Y[i, days - 1, h], Y[i, days - 7, h]]
+                    cols = [np.ones(len(days)), Y[i, days - INFO_LAG, h], Y[i, days - 7, h]]
                     if has_of[i]:
                         cols.append(OF[i, days, h])
                     return np.column_stack(cols + [wk])
@@ -192,13 +193,13 @@ def regression_forecast(Y, OF, first):
 def lgb_design(Y, OF, days, month, dow, cont):
     N, _, H = Y.shape
     with np.errstate(all="ignore"):
-        s = np.nanmean(Y[:, days[:, None] - np.arange(1, 8)[None, :], :], axis=(2, 3))
+        s = np.nanmean(Y[:, days[:, None] - np.arange(INFO_LAG, INFO_LAG + 7)[None, :], :], axis=(2, 3))
         feats = [
-            Y[:, days - 1, :] / s[..., None],
+            Y[:, days - INFO_LAG, :] / s[..., None],
             Y[:, days - 7, :] / s[..., None],
             Y[:, days - 14, :] / s[..., None],
-            np.repeat(np.nanmax(Y[:, days - 1, :], axis=2)[..., None], H, 2) / s[..., None],
-            np.repeat(np.nanmean(Y[:, days - 1, :], axis=2)[..., None], H, 2) / s[..., None],
+            np.repeat(np.nanmax(Y[:, days - INFO_LAG, :], axis=2)[..., None], H, 2) / s[..., None],
+            np.repeat(np.nanmean(Y[:, days - INFO_LAG, :], axis=2)[..., None], H, 2) / s[..., None],
             OF[:, days, :] / s[..., None],
             np.broadcast_to(np.arange(H), (N, len(days), H)).astype(float),
             np.broadcast_to(dow[days][None, :, None], (N, len(days), H)).astype(float),
@@ -216,7 +217,7 @@ def lightgbm_forecast(Y, OF, month, dow, cont, first):
                   feature_fraction=0.9, bagging_fraction=0.5, bagging_freq=1,
                   verbose=-1, seed=0, num_threads=4)
     for d0 in range(first, Dn, LGB_EVERY):
-        train = np.arange(max(d0 - LGB_WIN, 21), d0)
+        train = np.arange(max(d0 - INFO_LAG + 1 - LGB_WIN, 21), d0 - INFO_LAG + 1)
         X, s = lgb_design(Y, OF, train, month, dow, cont)
         y = (Y[:, train, :] / s[..., None]).reshape(-1)
         ok = np.flatnonzero(np.isfinite(y) & np.isfinite(X[:, 0]))
@@ -252,9 +253,9 @@ def main():
     F = np.full((len(METHODS), N, Dn, H), np.nan, dtype=np.float32)
     lag = lambda k: np.concatenate([np.full((N, k, H), np.nan), Y[:, :-k]], axis=1)
     with np.errstate(all="ignore"):
-        F[1] = lag(1)
+        F[1] = lag(INFO_LAG)
         F[2] = lag(7)
-        F[3] = np.nanmean(np.stack([lag(k) for k in range(1, 8)]), axis=0)
+        F[3] = np.nanmean(np.stack([lag(k) for k in range(INFO_LAG, INFO_LAG + 7)]), axis=0)
         F[4] = np.nanmean(np.stack([lag(7), lag(14), lag(21)]), axis=0)
     print("regression ...", flush=True)
     F[5] = regression_forecast(Y, OF, FIRST_DAY)

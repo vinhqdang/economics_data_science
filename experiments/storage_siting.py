@@ -156,6 +156,39 @@ def main():
     pd.Series(share).to_csv(os.path.join(ROOT, "results", f"storage_demand_share{SUFFIX}.csv"))
     print(fair.round(3).to_string())
 
+    # (f) out-of-sample siting: value curves from the first half of the
+    # evaluation period decide where the batteries go; their value is measured
+    # on the second half and compared with siting on second-half curves (oracle)
+    tdays = orders.shape[2]
+    halves = [np.arange(0, tdays // 2), np.arange(tdays // 2, tdays)]
+
+    def half_curves(m, hd):
+        q = orders[omethods.index(m)][:, hd]
+        v = valid[:, hd]
+        yz, qz = np.where(v, Y[:, hd], 0.0), np.where(v, q, 0.0)
+        yrs = np.maximum(v.reshape(N, -1).sum(axis=1) / 8760.0, 1e-9)
+        Vh = value_curves(np.maximum(yz - qz, 0).reshape(N, -1), np.maximum(qz - yz, 0).reshape(N, -1),
+                          u, grid, years=1.0) / yrs[:, None]
+        ok = (v.reshape(N, -1).sum(axis=1) / 8760.0) > 0.25
+        return np.where(ok[:, None], Vh, 0.0), ok
+
+    V1 = {m: half_curves(m, halves[0]) for m in ["Official", "GDMA-soft"]}
+    V2, ok2 = half_curves("GDMA-soft", halves[1])
+    rows = []
+    for B in BUDGETS_GW:
+        oracle = allocate_budget(grid, V2, B * 1e3)
+        v_or = sum(np.interp(oracle[i], grid[i], V2[i]) for i in range(N))
+        row = dict(budget_gw=B, oracle_musd=v_or * IDLE_USD / 1e6)
+        for m in ["GDMA-soft", "Official"]:
+            Pm = allocate_budget(grid, V1[m][0], B * 1e3)
+            v = sum(np.interp(Pm[i], grid[i], V2[i]) for i in range(N))
+            row[f"sited_on_{m}_musd"] = v * IDLE_USD / 1e6
+        rows.append(row)
+    oos = pd.DataFrame(rows)
+    oos.to_csv(os.path.join(ROOT, "results", f"storage_oos{SUFFIX}.csv"), index=False)
+    print("out-of-sample siting (value in the second half under soft GDMA operations)")
+    print(oos.round(1).to_string())
+
     # per-area optimal sizes under soft GDMA vs status quo (for the map/table)
     per = pd.DataFrame(dict(code=code, continent=cont, mean_mw=scale, years=years, tau=r["tau"],
                             mw_status_quo=optimal_sizes(grid, curves["Official"] * IDLE_USD, 150e3),

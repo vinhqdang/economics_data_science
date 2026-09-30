@@ -18,12 +18,14 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "src"))
 sys.path.insert(0, os.path.dirname(__file__))
 from gdma.core import (newsvendor_cost, fit_per_unit, fit_grouped, select_grouped,  # noqa: E402
-                       select_soft_grouped, fit_kmeans_two_step, cost_matrix)
+                       select_soft_grouped, fit_kmeans_two_step, cost_matrix, holdout_split, one_se,
+                       qr_combination_orders)
 from backtest import (candidate_policies, window_arrays, fto_orders, RESID_DAYS,  # noqa: E402
-                      STEP, G_MAX)
+                      STEP, G_MAX, rel_errors, resid_window)
+from timing import INFO_LAG  # noqa: E402
 
 METHOD_NAMES = ["Official", "EW", "Select", "Pooled", "PerUnit", "Shrink", "KMeans2S",
-                "FTO-PerUnit", "FTO-Grouped", "GDMA", "GDMA-soft", "GDMA-fair"]
+                "FTO-PerUnit", "FTO-Grouped", "GDMA", "GDMA-soft", "GDMA-fair", "QR"]
 SAVE_ORDERS = ["Official", "EW", "Pooled", "PerUnit", "Shrink", "FTO-PerUnit", "GDMA", "GDMA-soft",
                "GDMA-fair"]
 MAX_WINDOW = 56
@@ -32,15 +34,13 @@ MAX_WINDOW = 56
 def fast_candidate_policies(Y, F, tau, first, mult=None):
     """Vectorised version of backtest.candidate_policies (identical output).
     mult (M, N, days), if given, scales each candidate's daily margin."""
-    from backtest import REL_FLOOR
     M, N, Dn, H = F.shape
     P = np.full(F.shape, np.nan, dtype=np.float32)
     with np.errstate(all="ignore"):
-        floor = REL_FLOOR * np.nanmean(Y, axis=(1, 2))
-        rel = (Y[None] - F) / np.maximum(F, floor[None, :, None, None])
+        rel = rel_errors(Y, F)
         ii = np.arange(N)
-        for d in range(first + RESID_DAYS, Dn):
-            win = rel[:, :, d - RESID_DAYS:d, :].reshape(M, N, -1)
+        for d in range(first + RESID_DAYS + INFO_LAG, Dn):
+            win = rel[:, :, resid_window(d), :].reshape(M, N, -1)
             q = np.nanquantile(win, tau, axis=2)            # (N_tau, M, N)
             qi = q[ii, :, ii]                                # (N, M)
             m = qi.T if mult is None else qi.T * mult[:, :, d]
@@ -147,9 +147,9 @@ def main():
     M, N, Dn, H = F.shape
     print("candidates:", cand, flush=True)
     with np.errstate(all="ignore"):
-        scale = np.nanmean(Y, axis=(1, 2))
+        scale_full = np.nanmean(Y, axis=(1, 2))        # for reporting only
 
-    start = first + RESID_DAYS + MAX_WINDOW
+    start = first + RESID_DAYS + MAX_WINDOW + INFO_LAG
     origins = np.arange(start, Dn, STEP)
     K = len(METHOD_NAMES)
     orders = np.full((K, N, Dn, H), np.nan, dtype=np.float32)
@@ -157,7 +157,7 @@ def main():
     prev = None
     t0 = time.time()
     for n, d0 in enumerate(origins):
-        win = np.arange(d0 - args.window, d0)
+        win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
         Qo = np.nan_to_num(P[:, :, out, :])
@@ -165,7 +165,9 @@ def main():
         comb = lambda Wn: np.einsum("mnlh,nm->nlh", Qo, Wn)
         a = np.flatnonzero(active)
         Qa_, ya_ = Q[a], y[a]
-        ua, oa, sa = u[a], o[a], scale[a]
+        with np.errstate(all="ignore"):
+            sa = np.nan_to_num(np.nanmean(Y[a][:, win], axis=(1, 2)), nan=1.0) + 1e-8   # causal scale
+        ua, oa = u[a], o[a]
 
         def full(Wa, fill=None):
             Wn = np.full((N, M), 1.0 / M) if fill is None else np.tile(fill, (N, 1))
@@ -182,19 +184,19 @@ def main():
         Wu = fit_per_unit(Qa_, ya_, ua, oa, scale=sa)
         orders[4][:, out] = comb(full(Wu, pooled))
 
-        T1 = int(np.ceil(2 / 3 * Q.shape[1]))
-        Wa1 = fit_per_unit(Qa_[:, :T1], ya_[:, :T1], ua, oa, scale=sa)
-        pa1 = fit_grouped(Qa_[:, :T1], ya_[:, :T1], 1, ua, oa, scale=sa)["W"][0]
+        fi, vi = holdout_split(Q.shape[1])
+        Wa1 = fit_per_unit(Qa_[:, fi], ya_[:, fi], ua, oa, scale=sa)
+        pa1 = fit_grouped(Qa_[:, fi], ya_[:, fi], 1, ua, oa, scale=sa)["W"][0]
         ks = np.linspace(0, 1, 5)
-        sc = [np.diag(cost_matrix(Qa_[:, T1:], ya_[:, T1:], (1 - k) * Wa1 + k * pa1, ua, oa)).sum() for k in ks]
+        sc = [np.diag(cost_matrix(Qa_[:, vi], ya_[:, vi], (1 - k) * Wa1 + k * pa1, ua, oa)).sum() for k in ks]
         kap = ks[int(np.argmin(sc))]
         orders[5][:, out] = comb(full((1 - kap) * Wu + kap * pooled, pooled))
 
         sc = []
         for G in range(1, G_MAX + 1):
-            f = fit_kmeans_two_step(Qa_[:, :T1], ya_[:, :T1], G, ua, oa, scale=sa, W_unit=Wa1)
-            sc.append(cost_matrix(Qa_[:, T1:], ya_[:, T1:], f["W"], ua, oa)[np.arange(len(a)), f["labels"]].sum())
-        Gk = int(np.argmin(sc)) + 1
+            f = fit_kmeans_two_step(Qa_[:, fi], ya_[:, fi], G, ua, oa, scale=sa, W_unit=Wa1)
+            sc.append(cost_matrix(Qa_[:, vi], ya_[:, vi], f["W"], ua, oa)[np.arange(len(a)), f["labels"]])
+        Gk = one_se(sc) + 1
         km = fit_kmeans_two_step(Qa_, ya_, Gk, ua, oa, scale=sa, W_unit=Wu)
         orders[6][:, out] = comb(full(km["W"][km["labels"]], pooled))
 
@@ -203,9 +205,12 @@ def main():
         Wf = fit_per_unit(Fq, fy, loss="squared", scale=sa)
         Ff = np.nan_to_num(F)
         with np.errstate(all="ignore"):
-            orders[7][a[:, None], out[None, :]] = fto_orders(Ff[:, a], Y[a], Wf, np.arange(len(a)), tau[a], win, out)
+            orders[7][a[:, None], out[None, :]] = fto_orders(Ff[:, a], Y[a], Wf, np.arange(len(a)), tau[a],
+                                                             resid_window(d0), out)
             gf = select_grouped(Fq, fy, G_MAX, loss="squared", scale=sa, n_init=args.n_init)
-            orders[8][a[:, None], out[None, :]] = fto_orders(Ff[:, a], Y[a], gf["W"], gf["labels"], tau[a], win, out)
+            orders[8][a[:, None], out[None, :]] = fto_orders(Ff[:, a], Y[a], gf["W"], gf["labels"], tau[a],
+                                                             resid_window(d0), out)
+            orders[12][a[:, None], out[None, :]] = qr_combination_orders(F[:, a], Y[a], tau[a], win, out)
 
         init = None if prev is None else prev[a]
         sg = select_soft_grouped(Qa_, ya_, G_MAX, ua, oa, scale=sa, n_init=args.n_init, init_labels=init)
@@ -247,7 +252,7 @@ def main():
     np.savez_compressed(os.path.join(ROOT, "results", f"backtest_{tag}.npz"),
                         daily_cost=cost.sum(axis=3), short_hours=short.sum(axis=3),
                         valid_hours=valid.sum(axis=2), methods=np.array(METHOD_NAMES),
-                        eval_days=ev, tau=tau, u=u, o=o, scale=scale, code=d["code"],
+                        eval_days=ev, tau=tau, u=u, o=o, scale=scale_full, code=d["code"],
                         continent=d["continent"], G=np.array(hist["G"]),
                         labels=np.array(hist["labels"]), W=np.array(hist["W"]),
                         kappa=np.array(hist["kappa"]), kappa_shrink=np.array(hist["kappa_shrink"]),

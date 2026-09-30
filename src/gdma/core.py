@@ -20,7 +20,7 @@ from scipy.optimize import minimize
 __all__ = [
     "newsvendor_cost", "squared_cost", "fit_weights", "cost_matrix",
     "fit_grouped", "select_grouped", "fit_per_unit", "fit_kmeans_two_step",
-    "fit_weights_exact", "error_scale", "select_soft_grouped",
+    "fit_weights_exact", "error_scale", "select_soft_grouped", "holdout_split", "one_se", "fit_quantile_regression", "qr_combination_orders",
 ]
 
 
@@ -124,6 +124,47 @@ def fit_weights_exact(Q, y, u, o):
     r = linprog(c, A_eq=A, b_eq=np.r_[y, 1.0], bounds=(0, None), method="highs")
     w = np.clip(r.x[:M], 0, None)
     return w / w.sum()
+
+
+def fit_quantile_regression(X, y, tau):
+    """Linear quantile regression of y on [1, X] at level tau (Koenker-Bassett),
+    solved exactly by linear programming; unconstrained coefficients."""
+    from scipy.optimize import linprog
+    from scipy import sparse
+    n, k = X.shape
+    Z = np.column_stack([np.ones(n), X])
+    p = k + 1
+    A = sparse.hstack([sparse.csr_matrix(Z), -sparse.csr_matrix(Z), sparse.eye(n), -sparse.eye(n)]).tocsr()
+    c = np.r_[np.zeros(2 * p), np.full(n, tau), np.full(n, 1 - tau)]
+    r = linprog(c, A_eq=A, b_eq=y, bounds=(0, None), method="highs")
+    if r.x is None:
+        return None
+    return r.x[:p] - r.x[p:2 * p]
+
+
+def qr_combination_orders(F, Y, tau, days_fit, days_out):
+    """Quantile-regression combination benchmark: for each unit, regress
+    demand on the M point forecasts at its critical ratio tau_i over the fitting
+    days and commit the fitted quantile (Wang et al., 2019, without the simplex
+    constraint).  F is (M, N, Dn, H) point forecasts, Y is (N, Dn, H)."""
+    M, N, Dn, H = F.shape
+    out = np.full((N, len(days_out), H), np.nan)
+    for i in range(N):
+        X = F[:, i, days_fit, :].reshape(M, -1).T
+        y = Y[i, days_fit, :].reshape(-1)
+        ok = np.isfinite(y) & np.isfinite(X).all(axis=1)
+        if ok.sum() < 48:
+            continue
+        keep = X[ok].std(axis=0) > 1e-6 * max(np.abs(y[ok]).mean(), 1e-9)   # drop constant forecasts
+        for j in range(1, M):                                                # and exact duplicates
+            if keep[j] and any(keep[k] and np.allclose(X[ok, j], X[ok, k]) for k in range(j)):
+                keep[j] = False
+        b = fit_quantile_regression(X[ok][:, keep], y[ok], tau[i])
+        if b is None:
+            continue
+        Xo = F[:, i, days_out, :].reshape(M, -1).T[:, keep]
+        out[i] = (b[0] + Xo @ b[1:]).reshape(len(days_out), H)
+    return np.maximum(out, 0.0)
 
 
 # --------------------------------------------------------------------------
@@ -232,20 +273,50 @@ def fit_grouped(Q, Y, G, u=None, o=None, loss="newsvendor", scale=None,
     return best
 
 
+def holdout_split(T, every=3, hours=24):
+    """Fitting and validation index sets for a window of T hourly observations.
+
+    Validation days are every `every`-th day counted back from the end of the
+    window (the last day included); the other days form the fitting set.
+    Because weekly origins move by seven days, the validation days cycle
+    through the days of the week, and both sets span the whole window.
+    """
+    n_days = int(np.ceil(T / hours))
+    day = np.arange(T) // hours
+    val = (n_days - 1 - day) % every == 0
+    if val.all() or not val.any():
+        T1 = max(int(np.ceil(2 / 3 * T)), 2)
+        return np.arange(T1), np.arange(T1, T)
+    return np.flatnonzero(~val), np.flatnonzero(val)
+
+
+def one_se(unit_scores):
+    """Smallest model index within one standard error of the best hold-out
+    cost; unit_scores is (n_models, N) and the standard error is that of the
+    summed paired unit-level differences."""
+    unit_scores = np.asarray(unit_scores)
+    best = int(np.argmin(unit_scores.sum(axis=1)))
+    for g in range(best):
+        diff = unit_scores[g] - unit_scores[best]
+        if diff.sum() <= diff.std(ddof=1) * np.sqrt(len(diff)):
+            return g
+    return best
+
+
 def select_grouped(Q, Y, G_max, u=None, o=None, loss="newsvendor", scale=None,
                    frac=2 / 3, n_init=8, seed=0, init_labels=None, rule="1se"):
     """Choose G by temporal hold-out inside the window, then refit on it all.
 
-    The window is split into an early fitting block and a late validation
-    block; each G in 1..G_max is fitted on the early block and scored on the
-    late block with its fitted memberships and weights.  With rule='1se' the
+    The window is split by `holdout_split` into fitting and validation days;
+    each G in 1..G_max is fitted on the fitting days and scored on the
+    validation days with its fitted memberships and weights.  With rule='1se' the
     smallest G within one standard error of the best hold-out cost is chosen
     (standard error of the summed unit-level cost differences); rule='min'
     takes the minimiser.
     """
     T = Y.shape[1]
-    T1 = max(int(np.ceil(frac * T)), 2)
-    Qa, Ya, Qb, Yb = Q[:, :T1], Y[:, :T1], Q[:, T1:], Y[:, T1:]
+    fi, vi = holdout_split(T)
+    Qa, Ya, Qb, Yb = Q[:, fi], Y[:, fi], Q[:, vi], Y[:, vi]
     Wu = fit_per_unit(Qa, Ya, u, o, loss, scale)
     unit_scores = []
     for G in range(1, G_max + 1):
@@ -294,13 +365,13 @@ def select_soft_grouped(Q, Y, G_max, u=None, o=None, loss="newsvendor", scale=No
     """Soft GDMA: unit weights shrunk towards their segment's weights,
         w_i = (1 - kappa) * w_i^unit + kappa * w_{g_i}.
     G is chosen by the one-standard-error hold-out rule of `select_grouped`;
-    kappa is then chosen on the same hold-out block given G.  kappa = 1 is
+    kappa is then chosen on the same validation days given G.  kappa = 1 is
     GDMA, G = 1 is shrinkage towards pooled weights, kappa = 0 is unit-specific
     weights.
     """
     N, T = Y.shape
-    T1 = max(int(np.ceil(frac * T)), 2)
-    Qa, Ya, Qb, Yb = Q[:, :T1], Y[:, :T1], Q[:, T1:], Y[:, T1:]
+    fi, vi = holdout_split(T)
+    Qa, Ya, Qb, Yb = Q[:, fi], Y[:, fi], Q[:, vi], Y[:, vi]
     Wu_a = fit_per_unit(Qa, Ya, u, o, loss, scale)
     fits, unit_scores = [], []
     for G in range(1, G_max + 1):

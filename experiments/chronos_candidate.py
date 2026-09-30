@@ -1,16 +1,21 @@
 """Zero-shot foundation-model candidate: Chronos-Bolt (Ansari et al., 2024).
 
 For every grid area and operating day d, the pretrained model receives the
-previous 28 days of hourly demand (672 values, up to the end of day d-1) and
-returns its point (mean) forecast for the 24 hours of day d.  No fine-tuning is done,
+28 days of hourly demand known at decision time (672 values, up to the end of
+day d-2, see timing.py) and forecasts 48 hours ahead; the last 24 hours are the
+forecast for day d.  No fine-tuning is done,
 so the forecast uses no information from the evaluation period.
 Output: data/processed/global_chronos.npy with shape (N, days, 24).
 """
 import os
 import time
 import numpy as np
+import sys
 import torch
 from chronos import BaseChronosPipeline
+
+sys.path.insert(0, os.path.dirname(__file__))
+from timing import INFO_LAG  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 CONTEXT_DAYS = 28
@@ -28,8 +33,8 @@ def main():
     out = np.full((N, Dn, H), np.nan, dtype=np.float32)
     jobs = []
     for i in range(N):
-        for day in range(max(first, CONTEXT_DAYS), Dn):
-            ctx = Y[i, day - CONTEXT_DAYS:day].ravel()
+        for day in range(max(first, CONTEXT_DAYS + INFO_LAG), Dn):
+            ctx = Y[i, day - INFO_LAG + 1 - CONTEXT_DAYS:day - INFO_LAG + 1].ravel()
             # need most of the context and demand data on the target day
             if np.isfinite(ctx).mean() >= 0.75 and np.isfinite(Y[i, day]).any():
                 jobs.append((i, day))
@@ -37,10 +42,10 @@ def main():
     t0 = time.time()
     for b in range(0, len(jobs), BATCH):
         chunk = jobs[b:b + BATCH]
-        ctx = np.stack([Y[i, day - CONTEXT_DAYS:day].ravel() for i, day in chunk])
+        ctx = np.stack([Y[i, day - INFO_LAG + 1 - CONTEXT_DAYS:day - INFO_LAG + 1].ravel() for i, day in chunk])
         # Chronos handles missing values given as NaN
-        _, mean = pipe.predict_quantiles(torch.tensor(ctx), prediction_length=H, quantile_levels=[0.5])
-        med = np.asarray(mean).reshape(len(chunk), -1)[:, :H]
+        _, mean = pipe.predict_quantiles(torch.tensor(ctx), prediction_length=H * INFO_LAG, quantile_levels=[0.5])
+        med = np.asarray(mean).reshape(len(chunk), -1)[:, H * (INFO_LAG - 1):H * INFO_LAG]
         for (i, day), row in zip(chunk, med):
             out[i, day] = row
         if (b // BATCH) % 50 == 0:

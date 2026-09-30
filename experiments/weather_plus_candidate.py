@@ -17,6 +17,7 @@ import lightgbm as lgb
 
 sys.path.insert(0, os.path.dirname(__file__))
 from build_global import LGB_WIN, LGB_EVERY, LGB_MAX_ROWS  # noqa: E402
+from timing import INFO_LAG, nwp_mask  # noqa: E402
 from weather_candidate import design, gfs_forecasts  # noqa: E402
 from download_weather import POINTS  # noqa: E402
 
@@ -45,6 +46,7 @@ def to_areas(field, g, d, N, Dn, H):
         with np.errstate(all="ignore"):
             vals = np.nanmean(hourly[:, cols, :], axis=1)
         out[i, gi[gi >= 0]] = vals[gi >= 0]
+    out[~nwp_mask(d["continent"])] = np.nan       # run not yet available at gate closure
     return out
 
 
@@ -80,7 +82,8 @@ def main():
     def build(days_):
         X, s = design(Y, OF, Tf, days_, month, dow, cont)
         with np.errstate(all="ignore"):
-            prev = np.nanmean(T[:, days_ - 1, :], axis=2, keepdims=True)
+            # GFS forecast for day d-1 from the run of day d-2 (known at decision time)
+            prev = np.nanmean(Tf[:, days_ - 1, :], axis=2, keepdims=True)
         X[:, 12] = np.repeat(prev, H, axis=2).reshape(-1)
         rep = lambda a: np.repeat(np.nanmean(a, axis=2, keepdims=True), H, axis=2)
         with np.errstate(all="ignore"):
@@ -94,7 +97,7 @@ def main():
                   verbose=-1, seed=0, num_threads=args.threads)
     F = np.full((N, Dn, H), np.nan, dtype=np.float32)
     for d0 in range(first, Dn, LGB_EVERY):
-        train = np.arange(max(d0 - LGB_WIN, 21), d0)
+        train = np.arange(max(d0 - INFO_LAG + 1 - LGB_WIN, 21), d0 - INFO_LAG + 1)
         X, s = build(train)
         y = (Y[:, train, :] / s[..., None]).reshape(-1)
         ok = np.flatnonzero(np.isfinite(y) & np.isfinite(X[:, 0]))
