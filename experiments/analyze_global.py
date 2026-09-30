@@ -10,46 +10,56 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy import stats
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+from mcs import model_confidence_set  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 TAB = os.path.join(ROOT, "paper", "tables")
 FIG = os.path.join(ROOT, "paper", "figures")
 CONTS = ["North America", "Europe", "Oceania", "Asia", "Africa"]
-LABEL = {"Official": "Single best forecaster$^a$", "EW": "Equal weights", "Select": "Best single (per area)",
+LABEL = {"Official": "Reference forecaster$^a$", "EW": "Equal weights", "Select": "Best single (per area)", "QR": "Quantile-regression comb.",
          "Pooled": "Pooled DF weights", "PerUnit": "Per-area DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerUnit": "Forecast-then-commit, per area",
          "FTO-Grouped": "Forecast-then-commit, grouped", "NeuralGate": "Neural gate (deep MoE)",
          "GDMA": "GDMA", "GDMA-soft": "\\textbf{Soft GDMA}", "GDMA-fair": "Fair soft GDMA"}
-ORDER = ["Official", "EW", "Select", "Pooled", "PerUnit", "Shrink", "KMeans2S", "FTO-PerUnit",
+ORDER = ["Official", "EW", "Select", "Pooled", "PerUnit", "Shrink", "KMeans2S", "QR", "FTO-PerUnit",
          "FTO-Grouped", "NeuralGate", "GDMA", "GDMA-soft", "GDMA-fair"]
 
 
 def fairness_table(r, path):
     """Distribution of benefits across grid areas: per-area cost relative to the
-    area's own single best forecaster."""
+    reference forecaster, and share of areas worse off than under the reference
+    and than under their own best single candidate (chosen in-window)."""
     meth = list(r["methods"])
     C = r["daily_cost"].sum(axis=2)                  # (K, N)
     k0 = meth.index("Official")
+    kb = meth.index("Select")
     ok = C[k0] > 0
     ratio = C[:, ok] / C[k0, ok][None]
+    ratio_b = C[:, ok] / np.maximum(C[kb, ok][None], 1e-12)
     cont = r["continent"][ok]
     years = (r["valid_hours"][ok].sum(axis=1) / 8760.0)
     poor = years < 2.0
-    lines = [r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",
-             r" & \multicolumn{3}{c}{Per-area cost ratio} & Areas & Worst & Data-rich & Data-poor \\",
-             r"\cmidrule(lr){2-4}",
-             r"Method & P10 & Median & P90 & harmed & continent$^d$ & areas & areas$^e$ \\", r"\midrule"]
+    lines = [r"\begin{tabular}{@{}lcccccccc@{}}", r"\toprule",
+             r" & \multicolumn{3}{c}{Per-area cost ratio} & \multicolumn{2}{c}{Areas harmed vs} & Worst & Data-rich & Data-poor \\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-6}",
+             r"Method & P10 & Median & P90 & ref. & best single & continent$^d$ & areas & areas$^e$ \\", r"\midrule"]
     out = {}
     for m in [x for x in ORDER if x in meth]:
         k = meth.index(m)
         q = np.percentile(ratio[k], [10, 50, 90])
         harmed = (ratio[k] > 1.0).mean()
+        harmed_b = (ratio_b[k] > 1.0).mean()
         worst = max(np.median(ratio[k][cont == c]) for c in CONTS if (cont == c).any())
         rich = C[k, ok][~poor].sum() / C[k0, ok][~poor].sum()
         pr = C[k, ok][poor].sum() / C[k0, ok][poor].sum()
-        out[m] = dict(p10=q[0], med=q[1], p90=q[2], harmed=harmed, worst=worst, rich=rich, poor=pr)
-        lines.append(f"{LABEL[m]} & {q[0]:.3f} & {q[1]:.3f} & {q[2]:.3f} & {harmed:.2f} & {worst:.3f} & {rich:.3f} & {pr:.3f}" + r" \\")
-    lines += [r"\midrule", f"Areas & & {int(ok.sum())} & & & & {int((~poor).sum())} & {int(poor.sum())}" + r" \\",
+        out[m] = dict(p10=q[0], med=q[1], p90=q[2], harmed=harmed, harmed_best=harmed_b, worst=worst,
+                      rich=rich, poor=pr)
+        hb = "--" if m == "Select" else f"{harmed_b:.2f}"
+        lines.append(f"{LABEL[m]} & {q[0]:.3f} & {q[1]:.3f} & {q[2]:.3f} & {harmed:.2f} & {hb} & {worst:.3f} & {rich:.3f} & {pr:.3f}" + r" \\")
+    lines += [r"\midrule", f"Areas & & {int(ok.sum())} & & & & & {int((~poor).sum())} & {int(poor.sum())}" + r" \\",
               r"\bottomrule", r"\end{tabular}"]
     open(path, "w").write("\n".join(lines))
     return out
@@ -111,6 +121,13 @@ def main():
         sysd = C[:, mask].sum(axis=1)
         tot = sysd.sum(axis=1)
         tab[c] = (tot / tot[k0], sysd)
+    # 90% model confidence set on world daily cost (Hansen, Lunde and Nason, 2011)
+    kk = [meth.index(m) for m in rows]
+    world = tab["World"][1][kk]
+    in_mcs, p_mcs = model_confidence_set(world[:, world.sum(axis=0) > 0], alpha=0.10, B=1000, block=7)
+    mcs_members = {rows[j]: bool(in_mcs[j]) for j in range(len(rows))}
+    print("90% MCS (world daily cost):", [m for m, v in mcs_members.items() if v],
+          {rows[j]: round(float(p_mcs[j]), 3) for j in range(len(rows))})
     for m in rows:
         k = meth.index(m)
         cells = []
@@ -121,6 +138,8 @@ def main():
                 v = r"\textbf{" + v + "}"
             if k != ref and sysd[ref].sum() > 0:
                 v += star(dm(sysd[k][sysd[ref] > 0], sysd[ref][sysd[ref] > 0])[1])
+            if c == "World" and mcs_members.get(m):
+                v += r"$^\dagger$"
             cells.append(v)
         lines.append(LABEL[m] + " & " + " & ".join(cells) + r" \\")
     n_areas = [len(cont)] + [int((cont == c).sum()) for c in CONTS]
@@ -169,6 +188,38 @@ def main():
             lines.append(LABEL[m] + " & " + " & ".join(cells) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         open(os.path.join(TAB, "global_tau.tex"), "w").write("\n".join(lines))
+
+    # ---------------- Table: tail risk and a scarcity-level critical ratio ----
+    def tail_stats(rr, names):
+        mm = list(rr["methods"])
+        wd = rr["daily_cost"].sum(axis=1)                       # (K, days) world daily cost
+        k0_ = mm.index("Official")
+        n = wd.shape[1] // 7 * 7
+        wk = wd[:, :n].reshape(len(mm), -1, 7).sum(axis=2)
+        cv = lambda x: np.sort(x)[-max(1, int(0.05 * len(x))):].mean()
+        out_ = {}
+        for m in names:
+            if m in mm:
+                k = mm.index(m)
+                out_[m] = (wd[k].sum() / wd[k0_].sum(), cv(wd[k]) / cv(wd[k0_]), wk[k].max() / wk[k0_].max())
+        return out_
+    tail = tail_stats(r, rows)
+    t99p = os.path.join(ROOT, "results", f"backtest_global_w28_tau0.99{MAIN}.npz")
+    tail99 = tail_stats(np.load(t99p, allow_pickle=True), rows) if os.path.exists(t99p) else {}
+    two = lambda x, y: r"\begin{tabular}[b]{@{}c@{}}" + x + r"\\" + y + r"\end{tabular}"
+    lines = [r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
+             r" & \multicolumn{3}{c}{Calibrated $\tau_i$ (main)} & \multicolumn{3}{c}{$\tau_i=0.99$ for every area} \\",
+             r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}",
+             "Method & Total & " + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + " & Total & "
+             + two("CVaR$_{95}$", "daily") + " & " + two("Worst", "week") + r" \\", r"\midrule"]
+    fm = lambda d, m: " & ".join(f"{x:.3f}" for x in d[m]) if m in d else "-- & -- & --"
+    for m in rows:
+        if m in tail:
+            lines.append(LABEL[m] + " & " + fm(tail, m) + " & " + fm(tail99, m) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    open(os.path.join(TAB, "global_tail.tex"), "w").write("\n".join(lines))
+    print("tail risk", {m: np.round(v, 3).tolist() for m, v in tail.items()})
+    print("tau 0.99", {m: np.round(v, 3).tolist() for m, v in tail99.items()})
 
     # ---------------- Table: entry (transfer) ---------------------------
     act = r["active"]                         # (origins, N)
@@ -255,6 +306,18 @@ def main():
             lines.append(SL[m] + " & " + " & ".join(f"{x:.0f}" for x in v) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}"]
         open(os.path.join(TAB, "siting_value.tex"), "w").write("\n".join(lines))
+    op = os.path.join(ROOT, "results", f"storage_oos{SS}.csv")
+    if os.path.exists(op):
+        oo = pd.read_csv(op)
+        lines = [r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
+                 r"Budget & Sited on soft GDMA & Sited on the reference & Sited on the second \\",
+                 r"(GW) & (first half) & (first half) & half itself (oracle) \\", r"\midrule"]
+        for _, x in oo.iterrows():
+            lines.append(f"{int(x.budget_gw)} & {x['sited_on_GDMA-soft_musd']:.0f} & {x['sited_on_Official_musd']:.0f} & "
+                         f"{x.oracle_musd:.0f}" + r" \\")
+        lines += [r"\bottomrule", r"\end{tabular}"]
+        open(os.path.join(TAB, "siting_oos.tex"), "w").write("\n".join(lines))
+        print("out-of-sample siting", oo.round(1).to_dict("records"))
 
     fp = os.path.join(ROOT, "results", f"storage_fair{MAIN}.csv")
     if os.path.exists(fp):

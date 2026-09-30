@@ -3,6 +3,9 @@
 This section studies the global minimiser of~\eqref{eq:gdma} for a given $G$.
 We show that (i) its expected decision cost is close to that of the best grouped policy, with an estimation error that separates the price of learning memberships from the price of learning weights; (ii) it is asymptotically optimal and, under a latent segment structure, attains the risk of the infeasible unit-specific oracle; and (iii) it recovers the segments with probability approaching one, in which case its weights coincide with those of an estimator that is told the segments.
 Proofs are in Appendix~\ref{app:proofs}.
+The scope of these results should be stated plainly.
+They concern the exact global minimiser of the grouped criterion for a fixed number of segments, under stationarity, bounded losses and a high-level concentration condition; the estimator used in the applications is computed by a local search, with $G$ and the shrinkage intensity chosen on a hold-out, and the data are neither stationary nor independent across units.
+The theory therefore explains why grouping can beat both unit-specific and pooled weights and what it costs to learn the segments; it does not deliver numerical guarantees for the empirical estimator.
 
 \subsection{Setting and assumptions}
 
@@ -48,7 +51,7 @@ The square-root term has a transparent decomposition.
 Per unit, learning the segment membership costs $\log G/T_e$, while learning the segment weights costs $GM\log(NT_e)/(NT_e)$.
 The same argument applied to unit-specific weights ($G=N$) gives $M\log(NT_e)/T_e$, and applied to pooled weights ($G=1$) gives $M\log(NT_e)/(NT_e)$ but a larger approximation error $R^*_1-R^*_N$.
 Grouping therefore replaces the $M$ per-unit parameters of unit-specific weights by a single discrete label that costs $\log G$ rather than $M\log(NT_e)$ to learn.
-This is the formal sense in which GDMA resolves the tension between the noise of unit-specific weights and the bias of pooled weights: with $M=7$ candidates, $N=46$ units, $G=4$ segments and an effective length of $T_e=28$ (one observation per day of a four-week window), the variance proxy under the square root is $0.23$ for GDMA against $2.07$ for unit-specific weights, so the bound is about three times tighter, while the approximation error of GDMA is zero whenever the segment structure is correct.
+This is the formal sense in which GDMA resolves the tension between the noise of unit-specific weights and the bias of pooled weights: with $M=7$ candidates, $N=46$ units, $G=4$ segments and an effective length of $T_e=28$ (one observation per day of a four-week window), the variance proxy under the square root is $0.23$ for GDMA against $2.07$ for unit-specific weights, a factor of three in the square-root term, while the approximation error of GDMA is zero whenever the segment structure is correct. With unknown constants $L$ and $c$ both bounds are loose at these sizes, so the comparison concerns how the two error terms scale, not the size of the bounds.
 
 \subsection{Asymptotic optimality}
 
@@ -96,12 +99,13 @@ For fixed $(G,\kappa)$, $R_i$ is convex in $\bm w$, so the risk of~\eqref{eq:sof
 $R_i(\widehat{\bm w}^{\,\mathrm{soft}}_i)\le(1-\kappa)R_i(\widehat{\bm w}_i)+\kappa R_i(\widehat{\bm w}_{\widehat\gamma_i})$.
 Averaging over units, the excess risk of soft GDMA is at most the $\kappa$-weighted average of the excess risks of unit-specific weights and of GDMA, each controlled by Theorem~\ref{thm:oracle}.
 Under a segment structure, therefore, any $\kappa$ bounded away from zero inherits the faster rate of GDMA for the $\kappa$ share of the combination, while $\kappa<1$ buys robustness when segments are only approximate.
-Choosing $(G,\kappa)$ from a finite grid by hold-out adds only a $\log(|\mathcal G|)$ term to the hold-out error, where $|\mathcal G|$ is the grid size.
+These statements hold for fixed $(G,\kappa)$.
+We do not analyse the data-dependent choice of $(G,\kappa)$ on the hold-out, nor why soft GDMA with an estimated $\kappa$ can outperform both of its limits; a formal treatment of the hold-out rule under serial and cross-sectional dependence is left for future work.
 
 
 \paragraph{Weighted and fair criteria.}
 All results of this section hold for criteria in which unit $i$'s costs are multiplied by a weight $\omega_i\in[\underline\omega,\bar\omega]$ with $0<\underline\omega\le\bar\omega<\infty$: the weights only rescale $u_i$ and $o_i$, so Assumptions~\ref{as:bounded}--\ref{as:groups} hold with $\bar a$ replaced by $\bar\omega\bar a$ and $\lambda$ by $\underline\omega\lambda$.
 Fair soft GDMA uses data-dependent weights $\omega_i\propto1/c_i^0$; treating them as fixed within a window, Theorem~\ref{thm:oracle} bounds its weighted excess risk.
 Under the segment structure of Corollary~\ref{cor:ao}, the weighted and unweighted criteria have the same minimiser, because every unit attains its own optimal weights, and since each unit's excess risk is non-negative the unweighted excess risk is at most $1/\underline\omega$ times the weighted one (weights normalised to mean one).
-Fairness then costs nothing asymptotically.
+Fairness then costs nothing asymptotically, although the factor $1/\underline\omega$ can be large when the areas' costs differ by orders of magnitude.
 When segments are only approximate, the fair criterion trades some total cost for a more even distribution of the gains; this is the price of fairness that we measure empirically.

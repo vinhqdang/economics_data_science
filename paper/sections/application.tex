@@ -5,52 +5,57 @@
 We use the complete public record of the U.S.\ Energy Information Administration's Hourly Electric Grid Monitor (Form EIA-930; \citealp{EIA930}), downloaded on 29 September 2026.
 For every balancing authority (BA) in the lower 48 states the file reports hourly demand, the BA's own day-ahead demand forecast and total interchange with neighbouring BAs.
 We use the period 1 January 2019 to 26 September 2026 in UTC hours and exclude the fourteen regional aggregates.
-Following \citet{Ruggles2020}, non-positive values and values outside $[0.3,3]$ times a centred seven-day rolling median are treated as missing, and gaps of up to three hours are interpolated.
+Following \citet{Ruggles2020}, non-positive values and values outside $[0.3,3]$ times the median of the preceding seven days are treated as missing, and gaps of up to three hours are interpolated; the filter is one-sided, so it uses no future data, and the official forecast is filtered against its own history rather than against realised demand.
 We keep BAs with at least 97\% valid demand, at least 93\% valid official forecasts, mean demand above 50\,MW and a median absolute official forecast error below 15\% of median demand.
 Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators, and account for 97\% of lower-48 demand.
 Ten BAs are dropped, mostly small systems with long gaps or implausible official forecasts; 0.27\% of the retained BA-hours are missing.
 
 \subsection{Decision problem and cost calibration}
 
-Before each operating day $d$, BA $i$ commits hourly capacity $q_{i,d,h}$, $h=0,\dots,23$.
-The information set contains realised demand up to the end of day $d-1$ and the BA's published day-ahead forecast for day $d$.
+On the morning of day $d-1$, before the day-ahead gate closure, BA $i$ commits hourly capacity $q_{i,d,h}$, $h=0,\dots,23$, for the (UTC) operating day $d$.
+At that time demand is observed only up to the end of day $d-2$: the UTC day $d-1$ ends in the afternoon or evening of local day $d-1$ in the United States, after any day-ahead deadline.
+The information set therefore contains realised demand up to the end of day $d-2$, the realised costs of every rule up to the same day, and the BA's published day-ahead forecast for day $d$; every candidate, margin and estimation window below respects this timing.
+This is a conservative convention: an operator could also use the hours of day $d-1$ observed before the gate closure, which would favour the data-driven candidates slightly.
 Excess commitment costs $o_i=1$ per MWh, which normalises all costs to units of the per-MWh cost of idle committed capacity.
-Shortfalls cost $u_i=\tau_i/(1-\tau_i)$, where the critical ratio $\tau_i$ reflects the BA's ability to import.
-We measure interchange flexibility in the pre-sample year 2019 as the range between the 5th and 95th percentiles of hourly total interchange, divided by mean demand, and let $\tau_i$ decline linearly in the flexibility rank from $0.95$ for the least flexible BA to $0.80$ for the most flexible one.
+Shortfalls cost $u_i=\tau_i/(1-\tau_i)$, where the critical ratio $\tau_i$ is meant to reflect how easily the BA can lean on its neighbours.
+As a transparent proxy we use the variability of interchange in the pre-sample year 2019---the range between the 5th and 95th percentiles of hourly total interchange, divided by mean demand---and let $\tau_i$ decline linearly in its rank from $0.95$ for the BA with the least variable interchange to $0.80$ for the one with the most.
+Interchange variability is not transfer capability, and shortfall costs in practice depend on market prices and system conditions; the proxy only orders BAs plausibly, and Section~\ref{sec:robust} reports the results under common critical ratios from 0.5 to 0.95 (and Section~\ref{sec:global} for the global panel under a scarcity-level ratio of 0.99).
 ERCOT, which is almost islanded, receives $\tau=0.95$ ($u_i=19$); the Chelan County PUD in the densely interconnected Pacific Northwest receives $\tau=0.80$ ($u_i=4$).
-This calibration is deliberately simple and transparent; Section~\ref{sec:robust} shows that the ranking of methods is the same under common critical ratios between 0.5 and 0.95.
 
 \subsection{Candidate rules}
 
-Seven candidate forecasts are produced for every BA, day and hour, each using only information available before the operating day:
+Seven candidate forecasts are produced for every BA, day and hour, each using only the information available at the decision time:
 (1) the BA's official day-ahead forecast;
-(2) persistence (same hour of $d-1$);
+(2) persistence (same hour of $d-2$);
 (3) weekly persistence (same hour of $d-7$);
-(4) the mean of the same hour over $d-1,\dots,d-7$;
+(4) the mean of the same hour over $d-2,\dots,d-8$;
 (5) the mean of the same hour on $d-7$, $d-14$ and $d-21$;
-(6) a BA-and-hour-specific linear regression on the $d-1$ and $d-7$ values, the official forecast and weekday dummies, estimated on a rolling 56-day window and refitted weekly; and
+(6) a BA-and-hour-specific linear regression on the $d-2$ and $d-7$ values, the official forecast and weekday dummies, estimated on a rolling 56-day window and refitted weekly; and
 (7) a single global LightGBM model \citep{Ke2017} across all BAs and hours, trained on lags, calendar variables and the official forecast, all scaled by the BA's recent mean demand, refitted every 28 days on the preceding 365 days.
+Every training window ends at day $d_0-2$ for forecasts made at origin $d_0$.
 Model (7) is the kind of machine-learning forecaster a central planner could run for every BA at low cost.
 Each forecast $f^{(m)}$ becomes a candidate commitment by adding its own safety margin,
 \[
 q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\,\big\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\big\},
 \]
-where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_i\}$ of forecast $m$ for BA $i$ over the previous 28 days; the floor at 20\% of the BA's mean demand $\bar y_i$ prevents an occasional implausibly small forecast from producing an unbounded margin.
+where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_{i,t}\}$ of forecast $m$ for BA $i$ over the 28 days ending at $d-2$; the floor at 20\% of the BA's mean demand $\bar y_{i,t}$ over the week before the error's day $t$ prevents an occasional implausibly small forecast from producing an unbounded margin.
 The candidate rules are available from February 2020, so the evaluation period runs from 1 April 2020 to 26 September 2026: 2,342 days, 335 weekly re-estimations and 2.58 billion MWh of demand.
 
 \subsection{Competing methods}
 
-Every seven days each method re-estimates its combination from the most recent $W$ days, $W\in\{7,14,28,56\}$ (each day contributes 24 hourly observations per BA) and commits for the following seven days.
+Every seven days, at origin $d_0$, each method re-estimates its combination from the $W$ most recent days whose outcomes are known, $d_0-W-1,\dots,d_0-2$, $W\in\{7,14,28,56\}$ (each day contributes 24 hourly observations per BA), and commits for the following seven days.
 Besides GDMA and soft GDMA ($G_{\max}=6$) we consider:
-the official-forecast policy (candidate~1 alone), which is the status quo;
+the official-forecast policy (candidate~1 alone), the reference rule in the U.S.\ analysis---a stylised version of committing on the operator's own forecast, since actual commitment runs through market clearing, reliability unit commitment and reserve procurement;
 equal weights over the seven candidates;
 the best single candidate per BA over the window;
 pooled decision-focused weights;
 per-BA decision-focused weights (the decision-focused analogue of per-series forward validation);
 shrinkage of per-BA weights towards pooled weights with the shrinkage intensity chosen on the hold-out (a decision-focused version of \citealp{DieboldShin2019});
-two-step clustering, which runs $k$-means on the per-BA weight vectors and re-estimates pooled weights within clusters, with the number of clusters chosen by the same hold-out;
-and two \emph{forecast-then-commit} methods, which estimate per-BA or grouped combination weights by minimising scaled squared forecast error and then add the $\tau_i$-quantile of the combined forecast's relative errors.
+two-step clustering, which runs $k$-means on the per-BA weight vectors and re-estimates pooled weights within clusters, with the number of clusters chosen by the same hold-out and one-standard-error rule as GDMA;
+a linear quantile-regression combination, which regresses demand on the seven point forecasts at each BA's critical ratio $\tau_i$ without the simplex constraint (the natural decision-focused combination of \citealp{Wang2019cqra});
+and two \emph{forecast-then-commit} methods, which estimate per-BA or grouped combination weights by minimising scaled squared forecast error and then add the $\tau_i$-quantile of the combined forecast's relative errors over the same 28 days that set the candidates' margins.
 The last two isolate the value of estimating the combination for the decision rather than for accuracy.
+All hold-out choices ($G$, $\kappa$ and the shrinkage intensity) use the same split of the estimation window: every third day, counted back from the end of the window, is a validation day, so that the validation days span the window and cycle through the days of the week across origins.
 
 \subsection{Results}
 

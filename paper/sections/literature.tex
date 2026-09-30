@@ -12,7 +12,7 @@ All of these approaches either treat each target series separately or impose one
 Operations research has long recognised that the loss that matters is the decision cost \citep{Granger1969}.
 The data-driven newsvendor literature learns order quantities directly from data \citep{Levi2015,BanRudin2019}; prescriptive analytics maps covariates to decisions \citep{BertsimasKallus2020}; and ``smart predict-then-optimise'' trains predictors on decision regret \citep{ElmachtoubGrigas2022}; see \citet{Mandi2024} for a survey.
 In energy forecasting, \citet{Wang2019cqra} combine probabilistic load forecasts by minimising pinball loss on the simplex, one series at a time.
-This literature trains single models or combines forecasts for one unit; it does not exploit cross-sectional structure when many heterogeneous units face related decisions.
+Most of this literature trains single models or combines forecasts for one unit. An important exception is data pooling \citep{GuptaKallus2022}, which shrinks the solutions of many small newsvendor-type problems towards a common anchor and shows that pooling pays even when the problems are unrelated; decision-focused shrinkage of combination weights towards pooled weights, one of our benchmarks and the $G=1$ case of soft GDMA, applies the same idea to forecast combination.
 
 \paragraph{Deep learning for forecasting and for combination weights.}
 Pretrained time-series foundation models such as Chronos \citep{Ansari2024chronos} now forecast unseen series zero-shot with accuracy close to models trained on the target data, and deep networks are increasingly used to \emph{produce} combination weights: FFORMA maps series features to weights with gradient boosting \citep{MonteroManso2020}, and mixture-of-experts model averaging uses a softmax neural gate with covariate-dependent weights \citep{Gong2026moe}.
@@ -26,11 +26,13 @@ We make that input endogenous: the residual commitment risk depends on how opera
 
 \paragraph{Latent group structures.}
 Panel econometrics models unobserved heterogeneity through latent groups estimated by $k$-means-type algorithms \citep{LinNg2012,BonhommeManresa2015,AndoBai2016} or classifier-Lasso \citep{Su2016}.
-These methods group \emph{regression parameters} under squared loss and focus on the parameters themselves, not on combining the outputs of existing forecasting systems under an asymmetric decision loss.
+\citet{GuVolgushev2019} extend latent groups to panel quantile regression, which is the closest statistical relative of GDMA: a grouped quantile regression of demand on the candidate forecasts would be a grouped, unconstrained version of our quantile-regression benchmark.
+These methods group regression parameters, typically fixed effects, for inference on the parameters themselves; GDMA groups simplex weights over the outputs of existing forecasting systems, with unit-specific critical ratios, and is judged by the out-of-sample cost of the resulting decisions.
 
 \paragraph{The gap.}
 Table~\ref{tab:gap} summarises the position of GDMA.
 No existing method simultaneously (a) combines a library of existing candidate rules, including machine-learning and foundation-model forecasts, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares statistical strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery; nor does any link the resulting operational risk to the siting of new storage.
+The individual ingredients exist---decision-focused combination, shrinkage across problems, latent groups---and the contribution is their combination, the theory for it, and its use for a planning decision; as the applications show, much of the gain over the best single forecaster is already delivered by decision-focused shrinkage, and grouping adds a smaller refinement.
 Filling this gap matters most when windows are short---because systems change and old data are stale---and units are many, which is exactly the situation of system-wide infrastructure planning.
 
 \begin{table}[t]
@@ -46,10 +48,11 @@ Per-series combination / JMA / forward validation & \checkmark & & & \checkmark 
 Pooled combination & \checkmark & & \checkmark & \\
 Quantile / general-loss model averaging & \checkmark & \checkmark & & \checkmark \\
 Shrinkage towards equal or pooled weights & \checkmark & & partial & \checkmark \\
+Data pooling in stochastic optimisation & & \checkmark & partial & \checkmark \\
 Feature-based weights (FFORMA) & \checkmark & & \checkmark & \checkmark \\
 Neural mixture-of-experts gate & \checkmark & (\checkmark) & \checkmark & \checkmark \\
 Data-driven newsvendor, SPO & & \checkmark & \checkmark & \\
-Latent-group panel models & & & \checkmark & \checkmark \\
+Latent-group panel (quantile) models & & (\checkmark) & \checkmark & \checkmark \\
 \textbf{GDMA (this paper)} & \checkmark & \checkmark & \checkmark & \checkmark \\
 \bottomrule
 \end{tabular}

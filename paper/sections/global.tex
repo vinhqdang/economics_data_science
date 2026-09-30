@@ -3,13 +3,13 @@
 \subsection{A global panel of grid areas}
 
 We assemble public hourly demand data for 125 grid areas on five continents (Table~\ref{tab:globaldata}).
-\emph{North America} is represented by the 46 U.S.\ balancing authorities of Section~\ref{sec:app} (EIA Form~930, 2019--2026), the only systems in the panel that publish their own day-ahead forecasts.
+\emph{North America} is represented by the 46 U.S.\ balancing authorities of Section~\ref{sec:app} (EIA Form~930, 2019--2026), the only systems for which the operators' own day-ahead forecasts are part of the data; European transmission system operators and AEMO also publish day-ahead forecasts, but not through the sources we use, so outside the United States the reference rule is a model forecast (Section~\ref{sec:globalcand}).
 \emph{Europe} contributes 33 national systems from the Energy-Charts platform of Fraunhofer ISE \citep{EnergyCharts}, 2018--2026, including cross-border trading flows.
 \emph{Oceania} contributes the five regions of Australia's National Electricity Market \citep{AEMO}, 2018--2026.
 \emph{Asia} contributes the 31 provinces of mainland China for 2018 \citep{ChinaLoad2023}, the four grid areas of Taiwan for 2018 to mid-2022 \citep{TaiwanLoad2023} and the five regions of Thailand for 2023--2024 \citep{ThaiLoad2025}.
 \emph{Africa} is represented by Algeria (Sonelgaz), 2018 to January 2020 \citep{AlgeriaLoad2023}.
 All series are converted to hourly UTC, cleaned as in Section~\ref{sec:app}, and placed on a common calendar from 1 January 2018 to 26 September 2026.
-Together the areas have an average demand of 1.66\,TW---North America 455\,GW, Europe 339\,GW, Asia 839\,GW, Oceania 21\,GW and Africa 7\,GW---roughly half of world electricity demand, although not all areas are observed at the same time.
+The average demands of the areas sum to 1.66\,TW---North America 455\,GW, Europe 339\,GW, Asia 839\,GW, Oceania 21\,GW and Africa 7\,GW---but the areas are observed in different periods (the Chinese provinces only in 2018), so this is not the demand served at any one time.
 
 The panel is deliberately unbalanced.
 Systems in Asia and Africa enter and leave, and several have only one or two years of data, which is typical of the data situation in emerging economies; an area contributes to estimation and evaluation only on days with data.
@@ -36,19 +36,24 @@ Total & & 125 & 2018--2026 & 1.66\,TW \\
 \end{tabular}
 \end{table}
 
-\subsection{Candidates, costs and competitors}
+\subsection{Candidates, costs and competitors}\label{sec:globalcand}
 
-Every area receives eleven candidate forecasts: the seven of Section~\ref{sec:app}; a zero-shot forecast from the pretrained time-series foundation model Chronos-Bolt \citep{Ansari2024chronos}, which receives the previous 28 days of hourly demand and returns a 24-hour forecast without any fine-tuning; and three weather-aware global LightGBM models.
+Every area receives eleven candidate forecasts: the seven of Section~\ref{sec:app}; a zero-shot forecast from the pretrained time-series foundation model Chronos-Bolt (the small model; \citealp{Ansari2024chronos}), which receives the 28 days of hourly demand known at the decision time, forecasts the next 48 hours and contributes the last 24 of them, without any fine-tuning; and three weather-aware global LightGBM models.
+Chronos was pretrained on public time series that include electricity-load data, so some of our series or periods may have been part of its training corpus; its forecasts should be read with this in mind.
+Outside the United States candidate~0, the \emph{reference forecaster}, is the global LightGBM forecast; it is a strong model-based rule, not the best single candidate, which is reported separately as the per-area best single candidate chosen in each window.
 The temperature model adds to the LightGBM features the hourly 2-m temperature of the operating day, its daily mean, minimum and maximum, heating and cooling degrees (base 18\,$^\circ$C) and the previous day's mean temperature.
 Temperatures come from NASA POWER \citep{NASAPOWER}, which provides MERRA-2-based hourly data for any location without registration; each area is represented by the average of one to five load centres (169 locations in total, for example Dallas, Houston and San Antonio for ERCOT, or Paris, Lyon, Marseille and Lille for France).
 Realised temperature would be a perfect weather forecast, an \emph{ex post} forecast in the terminology of \citet{HongFan2016}.
-The weather models therefore use, for the operating day, \emph{archived day-ahead forecasts} of NOAA's Global Forecast System \citep{GFSarchive}: for day $d$ we take the run initialised at 00~UTC on day $d-1$, which is available on the morning before the day-ahead commitment, and its 2-m temperature forecasts for lead times of 24 to 48 hours, interpolated to the load centres and to hourly resolution.
+The weather models therefore use \emph{archived day-ahead forecasts} of NOAA's Global Forecast System \citep{GFSarchive}: for day $d$ we take the run initialised at 00~UTC on day $d-1$ and its 2-m temperature forecasts for lead times of 24 to 48 hours, interpolated to the load centres and to hourly resolution.
+This run becomes available at about 04--05~UTC, before a 10:00-local gate closure in the Americas, Europe and Algeria but after it in East Asia and Australia, so the weather models use numerical weather forecasts only in the first group of areas.
 Only the required fields are downloaded from each 1-degree forecast file, by byte range (18,846 temperature fields, 99.8\% retrieved).
-The public archive starts in January 2021, so the weather models have forecasts from 2021 onwards and fall back on their other features before; the previous day's temperature, which is known at the time of the decision, is always taken from NASA POWER.
+The archive we use, NOAA's open-data archive of 1-degree GFS files, starts in January 2021 (longer archives exist, for example at NCEI and in the GEFSv12 reforecast, but were not used), so the weather models have forecasts from 2021 onwards and fall back on their other features before.
+The previous day's temperature is not yet observed when the commitment is made; it is taken from the GFS forecast for day $d-1$ issued on day $d-2$.
 Against realised temperatures the GFS forecasts have a root-mean-squared error of 2.3\,$^\circ$C (1.9\,$^\circ$C in Europe, 2.2\,$^\circ$C in North America, 2.7\,$^\circ$C in Asia).
 A version of the temperature model with realised temperatures is reported as an upper bound on the value of temperature information.
 The \emph{multi-variable model} adds, from the same GFS runs and lead times, the forecast 2-m relative humidity, 10-m wind speed and downward short-wave radiation at the surface (99.8\% of the files from 2021 retrieved), and from the GEFSv12 ensemble \citep{GEFSv12,GEFSarchive} the ensemble standard deviation of 2-m temperature at 0.5 degrees (available for every day from October 2020), each hourly and as daily means.
 The spread measures how uncertain tomorrow's weather is, which a point forecast cannot convey, so the third weather candidate uses it for the commitment margin rather than for the point forecast: it takes the multi-variable forecast and multiplies its quantile margin by the ratio of the operating day's spread to its mean over the previous 28 days, clipped to $[0.5,3]$ (\emph{ensemble margin}).
+The rule and its constants were fixed before the evaluation and not tuned, but with a single archive and a raw, uncalibrated ensemble spread it should be read as exploratory.
 On an average day the spread says little about the size of the error (rank correlation 0.04 across area-days, median 0.08 within areas), but it is large precisely on days of unusual weather.
 Over the evaluation period the mean absolute errors, scaled by mean demand, are 3.5\% for the temperature and multi-variable models (3.5\% with exact temperatures), 3.6\% for LightGBM, 3.8\% for Chronos and for the hourly regression, 4.5\% for the official/LightGBM candidate and 6--8\% for the naive rules; the foundation model is thus competitive with a model trained on the data themselves.
 
@@ -56,8 +61,9 @@ Critical ratios follow the flexibility rule of Section~\ref{sec:app} wherever in
 Section~\ref{sec:robust} and Table~\ref{tab:globaltau} in the appendix show that a common $\tau$ gives the same ranking.
 
 Besides the benchmarks of Section~\ref{sec:app} we add a deep-learning competitor, a \emph{decision-focused neural gate}.
-It is a two-hidden-layer perceptron (7,691 parameters with eleven candidates) that maps each area's features at the weekly origin---each candidate's recent decision cost and forecast error over the previous 7 and 28 days, the area's critical ratio, size and continent, and the season---into combination weights through a softmax, as in mixture-of-experts model averaging \citep{Gong2026moe}.
-It is trained end to end on the same smoothed newsvendor cost, on the realised outcomes of the previous 52 weeks, and re-trained every four weeks.
+It is a two-hidden-layer perceptron (NGPARAMS parameters with eleven candidates) that maps each area's features at the weekly origin---each candidate's recent decision cost and forecast error over the last 7 and 28 known days, the area's critical ratio, recent mean demand, share of days with data and continent, and the season---into combination weights through a softmax, as in mixture-of-experts model averaging \citep{Gong2026moe}.
+It is trained end to end on the same smoothed newsvendor cost, on the up to 52 most recent weeks whose outcomes are fully observed, and re-trained every four weeks; the four most recent of these weeks serve for early stopping, and the weights of two independently initialised networks are averaged.
+We did not search over architectures, so the gate represents a reasonably trained but untuned neural benchmark.
 Unlike GDMA, it can let weights vary continuously with observed conditions; like GDMA, it only uses information available at the time of each decision.
 
 \subsection{Results}

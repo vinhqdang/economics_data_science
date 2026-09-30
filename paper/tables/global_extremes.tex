@@ -1,0 +1,23 @@
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \begin{tabular}[b]{@{}c@{}}World\\cold\end{tabular} & \begin{tabular}[b]{@{}c@{}}World\\hot\end{tabular} & \begin{tabular}[b]{@{}c@{}}U.S.\\cold\end{tabular} & \begin{tabular}[b]{@{}c@{}}U.S.\\hot\end{tabular} \\
+\midrule
+Reference forecaster$^a$ & 1.000 & 1.000 & 1.000 & 1.000 \\
+Equal weights & 1.151 & 0.919 & 1.323 & 0.885 \\
+Best single (per area) & 0.877 & 0.789 & 0.941 & 0.751 \\
+Pooled DF weights & 0.848 & 0.743 & 0.888 & 0.688 \\
+Per-area DF weights & 0.804 & 0.736 & 0.832 & 0.689 \\
+Shrinkage to pooled & 0.800 & 0.723 & 0.827 & 0.678 \\
+Two-step $k$-means & 0.804 & 0.739 & 0.844 & 0.693 \\
+Forecast-then-commit, per area & 1.004 & 0.803 & 1.163 & 0.756 \\
+Forecast-then-commit, grouped & 0.982 & 0.766 & 1.169 & 0.712 \\
+Neural gate (deep MoE) & 0.844 & 0.763 & 0.921 & 0.723 \\
+GDMA & 0.815 & 0.736 & 0.860 & 0.693 \\
+\textbf{Soft GDMA} & 0.803 & 0.728 & 0.841 & 0.684 \\
+Fair soft GDMA & 0.804 & 0.730 & 0.851 & 0.686 \\
+\midrule
+Soft GDMA / reference, 90\% CI & [0.77, 0.84] & [0.70, 0.75] & [0.80, 0.89] & [0.65, 0.72] \\
+Soft GDMA / best single, 90\% CI & [0.89, 0.94] & [0.90, 0.94] & [0.86, 0.93] & [0.88, 0.94] \\
+Area-days & 9,624 & 9,623 & 3,542 & 3,540 \\
+\bottomrule
+\end{tabular}

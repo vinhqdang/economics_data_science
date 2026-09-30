@@ -4,6 +4,7 @@ Reads results/backtest_<tag>.npz and writes LaTeX tables to paper/tables and
 figures to paper/figures.
 """
 import os
+import sys
 import glob
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ LABEL = {"Official": "Official forecast", "EW": "Equal weights", "Select": "Best
          "Pooled": "Pooled DF weights", "PerBA": "Per-BA DF weights", "Shrink": "Shrinkage to pooled",
          "KMeans2S": "Two-step $k$-means", "FTO-PerBA": "Forecast-then-commit, per BA",
          "FTO-Grouped": "Forecast-then-commit, grouped", "GDMA": "GDMA", "GDMA-min": "GDMA, minimum hold-out rule",
-         "GDMA-soft": "\\textbf{Soft GDMA}"}
+         "GDMA-soft": "\\textbf{Soft GDMA}", "QR": "Quantile-regression comb."}
 plt.rcParams.update({"font.size": 9, "axes.spines.top": False, "axes.spines.right": False})
 
 
@@ -97,6 +98,15 @@ def main():
              "Method & " + " & ".join(f"$W={t.split('_')[0][1:]}$" for t in windows) + r" & Share of BAs \\",
              " & " + " & ".join("days" for _ in windows) + r" & improved$^a$ \\", r"\midrule"]
     main_w = "w28_taucalibrated" if "w28_taucalibrated" in windows else windows[-1]
+    sys.path.insert(0, os.path.dirname(__file__))
+    from mcs import model_confidence_set
+    rm = res[main_w]
+    mlist = list(rm["methods"])
+    sysd_m = rm["daily_cost"].sum(axis=1)
+    in_mcs, p_mcs = model_confidence_set(sysd_m, alpha=0.10, B=1000, block=7)
+    mcs_m = {mlist[j]: bool(in_mcs[j]) for j in range(len(mlist))}
+    print("U.S. 90% MCS at W=28:", [m for m in mlist if mcs_m[m]],
+          {mlist[j]: round(float(p_mcs[j]), 3) for j in range(len(mlist))})
     for m in meth:
         cells = []
         for t in windows:
@@ -111,6 +121,8 @@ def main():
             star = ""
             if np.isfinite(s.dm_p):
                 star = "$^{***}$" if s.dm_p < 0.01 else "$^{**}$" if s.dm_p < 0.05 else "$^{*}$" if s.dm_p < 0.1 else ""
+            if t == main_w and mcs_m.get(m):
+                star += r"$^\dagger$"
             cells.append(v + star)
         share = f"{summ[main_w].loc[m].beat_off:.2f}" if m in summ[main_w].index else "--"
         lines.append(LABEL[m] + " & " + " & ".join(cells) + f" & {share}" + r" \\")
@@ -211,7 +223,7 @@ def main():
 
     # ---------------- extreme events ---------------------------------------
     events = {"Uri": ("2021-02-10", "2021-02-20"),
-              "Elliott": ("2022-12-22", "2022-12-27"),
+              "Elliott": ("2022-12-21", "2022-12-26"),
               "Heat wave 2023": ("2023-07-15", "2023-08-15")}
     lines = [r"\begin{tabular}{@{}l" + "c" * len(events) + "@{}}", r"\toprule",
              "Method & " + " & ".join(events) + r" \\", r"\midrule"]
