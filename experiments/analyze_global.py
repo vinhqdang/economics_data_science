@@ -375,6 +375,27 @@ def main():
               f"{int((terc == 0).sum())} & {int((terc == 2).sum())} & " + r"\\", r"\bottomrule", r"\end{tabular}"]
     open(os.path.join(TAB, "global_income.tex"), "w").write("\n".join(lines))
     print("income", {m: {k: round(v, 3) for k, v in d.items()} for m, d in inc_out.items()})
+    # uncertainty of the rank correlations: bootstrap over areas; and the
+    # correlation among data-rich areas only (data length is confounded with income)
+    rng = np.random.default_rng(0)
+    yrs_i = (r["valid_hours"].sum(axis=1) / 8760.0)[okk]
+    for m in ["GDMA-soft", "GDMA-fair", "Pooled", "NeuralGate"]:
+        if m not in meth:
+            continue
+        k = meth.index(m)
+        x, g = ratio[k], lgdp
+        fin = np.isfinite(x) & np.isfinite(g)
+        bs = [stats.spearmanr(x[fin][ix], g[fin][ix]).statistic
+              for ix in (rng.integers(0, fin.sum(), fin.sum()) for _ in range(1000))]
+        rich = fin & (yrs_i >= 2.0)
+        xu, pu = ratio[k][us], pcpi[us]
+        fu = np.isfinite(xu) & np.isfinite(pu)
+        bu = [stats.spearmanr(xu[fu][ix], pu[fu][ix]).statistic
+              for ix in (rng.integers(0, fu.sum(), fu.sum()) for _ in range(1000))]
+        print(f"income rho {m}: GDP {stats.spearmanr(x[fin], g[fin]).statistic:.3f} "
+              f"90% CI [{np.nanquantile(bs, .05):.2f}, {np.nanquantile(bs, .95):.2f}]; data-rich only "
+              f"{stats.spearmanr(x[rich], g[rich]).statistic:.3f} (n={rich.sum()}); U.S. state income "
+              f"CI [{np.nanquantile(bu, .05):.2f}, {np.nanquantile(bu, .95):.2f}]")
 
     # ---------------- fairness audit and candidate-set robustness -------------
     fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
