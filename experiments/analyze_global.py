@@ -67,7 +67,7 @@ def dm(a, b, lag=7):
     return t, 2 * stats.norm.sf(abs(t))
 
 
-MAIN = os.environ.get("MAIN_SUFFIX", "_weather-noise2")
+MAIN = os.environ.get("MAIN_SUFFIX", "_weather-gfs")
 
 
 def load(W, suffix=None):
@@ -309,8 +309,8 @@ def main():
 
     # ---------------- fairness audit and candidate-set robustness -------------
     fair = fairness_table(r, os.path.join(TAB, "global_fairness.tex"))
-    specs = [("No weather", ""), ("Weather, $\\sigma=2^\\circ$C (main)", "_weather-noise2"),
-             ("Exact weather", "_weather-exact")]
+    specs = [("No weather", ""), ("GFS forecasts (main)", "_weather-gfs"),
+             ("Realised weather", "_weather-exact")]
     avail = [(n, sfx) for n, sfx in specs if os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w28_taucalibrated{sfx}.npz"))]
     lines = [r"\begin{tabular}{@{}l" + "c" * len(avail) + "@{}}", r"\toprule",
              "Method & " + " & ".join(n for n, _ in avail) + r" \\", r"\midrule"]
