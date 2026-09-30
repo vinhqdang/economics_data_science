@@ -56,12 +56,14 @@ segment recovery; exact equivalence with the estimator that knows the segments.
 | | Soft GDMA saving vs best single forecaster |
 |---|---|
 | 46 U.S. balancing authorities (vs official forecasts) | 18–20% |
-| 125 grid areas, five continents (1.66 TW) | 17.2% |
-| vs decision-focused neural gate (6,920 parameters) | 9 percentage points |
+| 125 grid areas, five continents (1.66 TW), with GFS weather forecasts | 18.0% (fair version 18.3%) |
+| vs decision-focused neural gate (~7,000 parameters) | 10 percentage points |
+| grid areas made worse off than their own best forecaster | 4% (fair version: 2%; neural gate: 33%) |
 
 Without storage, soft GDMA is cheaper than the status quo with 60 GW of optimally sited batteries,
-and is worth 6–8 GW relative to standard combination rules. Siting a storage programme on the
-status-quo error profile loses up to 15% of its value.
+and is worth 5–7 GW relative to standard combination rules. Siting a storage programme on the
+status-quo error profile loses up to 15% of its value; maximin-fair siting protects the worst-served
+continent at a price of fairness of about 1%. No systematic income gradient in the benefits.
 
 ## Repository layout
 
@@ -76,7 +78,11 @@ experiments/build_global.py   global panel (125 areas) and candidate forecasts
 experiments/chronos_candidate.py  zero-shot Chronos-Bolt forecasts
 experiments/backtest_global.py    global rolling backtest
 experiments/neural_gate.py    decision-focused neural mixture-of-experts benchmark
-experiments/storage_siting.py battery siting
+experiments/download_weather.py   NASA POWER hourly temperature at 169 load centres
+experiments/download_gfs.py   archived NOAA GFS day-ahead temperature forecasts (2021-2026, AWS open data)
+experiments/weather_candidate.py  weather-aware LightGBM candidate (GFS forecasts / realised temperature)
+experiments/income.py         World Bank / IMF GDP per capita and income groups, BEA state income
+experiments/storage_siting.py battery siting (efficient, proportional floors, maximin)
 experiments/simulation.py     Monte Carlo study
 experiments/analyze.py, analyze_global.py, sim_tables.py   tables and figures
 paper/                        LaTeX manuscript and compiled PDF
@@ -86,14 +92,20 @@ results/                      logs, summary tables and small result files
 ## Reproduce
 
 ```bash
-pip install numpy scipy pandas scikit-learn lightgbm matplotlib pyarrow openpyxl torch chronos-forecasting
+pip install numpy scipy pandas scikit-learn lightgbm matplotlib pyarrow openpyxl torch chronos-forecasting pygrib
 mkdir -p data/raw data/interim data/processed results
 curl -L https://www.eia.gov/opendata/bulk/EBA.zip -o data/raw/EBA.zip       # public, no key
 python experiments/extract_eia.py && python experiments/build_panel.py
 for w in 7 14 28 56; do python experiments/backtest.py --window $w; python experiments/backtest.py --window $w --variants; done
 for t in 0.5 0.8 0.9 0.95; do python experiments/backtest.py --window 28 --tau $t; python experiments/backtest.py --window 28 --tau $t --variants; done
 python experiments/download_global.py && python experiments/build_global.py && python experiments/chronos_candidate.py
+python experiments/download_weather.py && python experiments/download_gfs.py
+python experiments/weather_candidate.py --source gfs && python experiments/weather_candidate.py --noise 0
+python experiments/income.py            # needs World Bank, IMF and FRED files in data/raw/income
 for w in 28 14; do python experiments/backtest_global.py --window $w; python experiments/neural_gate.py --window $w; done
+python experiments/backtest_global.py --window 28 --weather gfs && python experiments/neural_gate.py --window 28 --weather gfs
+python experiments/backtest_global.py --window 28 --weather exact
+TAG=global_w28_taucalibrated_weather-gfs python experiments/storage_siting.py
 python experiments/backtest_global.py --window 28 --tau 0.9
 python experiments/storage_siting.py
 python experiments/simulation.py
