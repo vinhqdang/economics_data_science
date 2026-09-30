@@ -1,5 +1,4 @@
 \begin{abstract}
-\noindent
 Grid operators must commit capacity a day ahead, and planners must decide where to install new batteries.
 Both decisions rest on how the many available demand forecasts---operators' own forecasts, statistical models, machine learning, models driven by archived numerical weather forecasts, and pretrained foundation models---are combined.
 We propose \emph{grouped decision-focused model averaging} (GDMA), which jointly learns a small number of latent segments of decision units and segment-specific combination weights by minimising the realised decision cost, with each unit's own cost asymmetry, rather than forecast error; a soft version shrinks each unit's weights towards its segment, and a fair version counts every unit's relative improvement equally.
@@ -9,5 +8,4 @@ On 125 grid areas in North America, Europe, Oceania, Asia and Africa with an ave
 Archived ensemble weather forecasts halve the gap to the operators' own forecasts during Winter Storm Elliott, and a candidate whose safety margin widens with the ensemble spread beats the operators on its own during the storm.
 Better combination substitutes for storage: without batteries, soft GDMA is cheaper than the status quo with 60\,GW of optimally sited batteries, and it is worth 5--7\,GW relative to standard combination rules.
 Siting storage on the status-quo error profile loses up to 15\% of a small programme's value, and maximin-fair siting raises the benefit of the worst-served continent at a price of fairness of about 1\%.
-\par\medskip\noindent\textbf{Keywords:} model averaging; decision-focused learning; latent groups; foundation models; fairness; capacity commitment; battery storage siting; energy management
 \end{abstract}

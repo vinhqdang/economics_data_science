@@ -1,5 +1,4 @@
-\documentclass[11pt]{article}
-\usepackage[a4paper,margin=2.5cm]{geometry}
+\documentclass[preprint,12pt,authoryear]{elsarticle}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{amsmath,amssymb,amsthm,bm}
@@ -8,13 +7,13 @@
 \usepackage{graphicx}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-\usepackage{natbib}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
 \usepackage{setspace}
 \usepackage{caption}
 \captionsetup{font=small}
-\onehalfspacing
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\biboptions{authoryear}
 \setlength{\emergencystretch}{3em}
 
 \newtheorem{theorem}{Theorem}
@@ -22,16 +21,28 @@
 \newtheorem{assumption}{Assumption}
 \newtheorem{proposition}{Proposition}
 
-\title{From Forecasts to Batteries: Grouped Decision-Focused Model Averaging for Capacity Commitment and Storage Siting on Five Continents}
-\author{Quang-Vinh Dang\\[2pt]
-\small British University Vietnam, Hung Yen, Vietnam\\
-\small \href{mailto:vinh.dq4@buv.edu.vn}{vinh.dq4@buv.edu.vn} \quad ORCID: 0000-0002-3877-8024}
-\date{}
+\journal{Journal of Management Science and Engineering}
 
 \begin{document}
-\maketitle
+
+\begin{frontmatter}
+
+\title{From Forecasts to Batteries: Grouped Decision-Focused Model Averaging for Capacity Commitment and Storage Siting on Five Continents}
+
+\author{Quang-Vinh Dang\corref{cor1}}
+\ead{vinh.dq4@buv.edu.vn}
+\cortext[cor1]{Corresponding author. ORCID: 0000-0002-3877-8024.}
+\affiliation{organization={British University Vietnam},
+            city={Hung Yen},
+            country={Vietnam}}
 
 \input{sections/abstract}
+
+\begin{keyword}
+model averaging \sep decision-focused learning \sep latent groups \sep foundation models \sep fairness \sep capacity commitment \sep battery storage siting \sep energy management
+\end{keyword}
+
+\end{frontmatter}
 
 \input{sections/intro}
 \input{sections/literature}
@@ -42,8 +53,9 @@
 \input{sections/global}
 \input{sections/storage}
 \input{sections/conclusion}
+\input{sections/declarations}
 
-\bibliographystyle{apalike}
+\bibliographystyle{elsarticle-harv}
 \bibliography{refs}
 
 \appendix

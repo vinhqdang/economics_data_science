@@ -131,8 +131,11 @@ def main():
     if 14 in res:
         lines = [r"\begin{tabular}{@{}lcc@{}}", r"\toprule", r"Method & $W=14$ & $W=28$ \\", r"\midrule"]
         rel = {}
+        both = all(os.path.exists(os.path.join(ROOT, "results", f"backtest_global_w{W}_taucalibrated{MAIN}.npz"))
+                   for W in (14, 28))
+        WIN_SUFFIX = MAIN if both else ""          # same candidate set for both windows
         for W in (14, 28):
-            rr = load(W, "")                       # both windows without the weather candidate
+            rr = load(W, WIN_SUFFIX)
             s = rr["daily_cost"].sum(axis=(1, 2))
             rel[W] = dict(zip(rr["methods"], s / s[list(rr["methods"]).index("Official")]))
         for m in rows:
@@ -141,7 +144,10 @@ def main():
         open(os.path.join(TAB, "global_windows.tex"), "w").write("\n".join(lines))
 
     # ---------------- Table: common critical ratio (world, W = 28) ------------
-    tp = os.path.join(ROOT, "results", "backtest_global_w28_tau0.9.npz")
+    tp = os.path.join(ROOT, "results", f"backtest_global_w28_tau0.9{MAIN}.npz")
+    TAU_SUFFIX = MAIN
+    if not os.path.exists(tp):
+        tp, TAU_SUFFIX = os.path.join(ROOT, "results", "backtest_global_w28_tau0.9.npz"), ""
     if os.path.exists(tp):
         rt = np.load(tp, allow_pickle=True)
         mt = list(rt["methods"])
