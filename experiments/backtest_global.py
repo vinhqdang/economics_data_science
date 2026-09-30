@@ -156,7 +156,19 @@ def main():
     hist = dict(G=[], labels=[], W=[], kappa=[], kappa_shrink=[], G_km=[], G_fto=[], active=[])
     prev = None
     t0 = time.time()
+    # checkpoint every CKPT origins so that an interrupted run resumes where it stopped
+    ck = os.path.join(ROOT, "data", "interim", f"ckpt_{tag}.pkl")
+    n_done = 0
+    if os.path.exists(ck):
+        import pickle
+        with open(ck, "rb") as f:
+            st = pickle.load(f)
+        if st["n_origins"] == len(origins):
+            orders, hist, prev, n_done = st["orders"], st["hist"], st["prev"], st["n"]
+            print(f"[{tag}] resuming after origin {n_done}", flush=True)
     for n, d0 in enumerate(origins):
+        if n < n_done:
+            continue
         win = np.arange(d0 - INFO_LAG + 1 - args.window, d0 - INFO_LAG + 1)
         out = np.arange(d0, min(d0 + STEP, Dn))
         Q, y = window_arrays(P, Y, win)
@@ -236,6 +248,11 @@ def main():
         hist["G"].append(sg["G"]); hist["labels"].append(labels); hist["W"].append(full(Wg, pooled))
         hist["kappa"].append(sg["kappa"]); hist["kappa_shrink"].append(kap)
         hist["G_km"].append(Gk); hist["G_fto"].append(gf["G"]); hist["active"].append(active)
+        if (n + 1) % 10 == 0:
+            import pickle
+            with open(ck + ".tmp", "wb") as f:
+                pickle.dump(dict(n_origins=len(origins), orders=orders, hist=hist, prev=prev, n=n + 1), f)
+            os.replace(ck + ".tmp", ck)
         if n % 20 == 0:
             print(f"[{tag}] origin {n + 1}/{len(origins)} active={active.sum()} G={sg['G']} "
                   f"kappa={sg['kappa']:.2f} {time.time() - t0:.0f}s", flush=True)
