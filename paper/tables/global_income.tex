@@ -5,19 +5,19 @@
 Method & High & Upper-middle & Rank corr.\ with & Lowest & Highest & Rank corr.\ with \\
  & income & income & GDP p.c.$^g$ & income third & income third & state income$^g$ \\
 \midrule
-Single best forecaster$^a$ & 1.000 & 1.000 & -- & 1.000 & 1.000 & -- \\
-Equal weights & 1.171 & 1.073 & 0.145 & 1.448 & 0.992 & -0.128 \\
-Best single (per area) & 0.857 & 0.904 & -0.085 & 0.940 & 0.667 & 0.008 \\
-Pooled DF weights & 0.853 & 0.867 & 0.010 & 0.932 & 0.683 & -0.130 \\
-Per-area DF weights & 0.817 & 0.890 & -0.207 & 0.892 & 0.628 & -0.078 \\
-Shrinkage to pooled & 0.815 & 0.860 & -0.094 & 0.889 & 0.635 & -0.101 \\
-Two-step $k$-means & 0.815 & 0.861 & -0.050 & 0.894 & 0.649 & -0.034 \\
-Forecast-then-commit, per area & 0.905 & 0.939 & -0.058 & 1.041 & 0.715 & -0.155 \\
-Forecast-then-commit, grouped & 0.902 & 0.907 & 0.032 & 1.058 & 0.745 & -0.179 \\
-Neural gate (deep MoE) & 0.904 & 0.986 & -0.254 & 1.057 & 0.737 & -0.159 \\
-GDMA & 0.818 & 0.863 & -0.043 & 0.902 & 0.656 & -0.062 \\
-\textbf{Soft GDMA} & 0.810 & 0.859 & -0.085 & 0.888 & 0.639 & -0.071 \\
-Fair soft GDMA & 0.807 & 0.854 & -0.082 & 0.884 & 0.639 & -0.072 \\
+Reference forecaster$^a$ & 1.000 & 1.000 & -- & 1.000 & 1.000 & -- \\
+Equal weights & 1.235 & 1.014 & 0.530 & 1.636 & 1.141 & -0.106 \\
+Best single (per area) & 0.917 & 0.992 & -0.126 & 0.964 & 0.692 & 0.013 \\
+Pooled DF weights & 0.901 & 0.918 & 0.185 & 0.959 & 0.729 & -0.033 \\
+Per-area DF weights & 0.888 & 0.969 & -0.164 & 0.941 & 0.680 & 0.015 \\
+Shrinkage to pooled & 0.883 & 0.947 & -0.093 & 0.936 & 0.680 & 0.009 \\
+Two-step $k$-means & 0.880 & 0.928 & 0.108 & 0.938 & 0.696 & 0.063 \\
+Quantile-regression comb. & 1.011 & 1.074 & -0.204 & 1.128 & 0.771 & -0.107 \\
+Forecast-then-commit, per area & 0.983 & 1.043 & -0.010 & 1.101 & 0.768 & -0.122 \\
+Forecast-then-commit, grouped & 0.962 & 1.011 & 0.046 & 1.089 & 0.781 & -0.122 \\
+GDMA & 0.879 & 0.938 & 0.025 & 0.931 & 0.689 & 0.045 \\
+\textbf{Soft GDMA} & 0.878 & 0.951 & -0.120 & 0.927 & 0.678 & 0.028 \\
+Fair soft GDMA & 0.875 & 0.947 & -0.114 & 0.927 & 0.678 & 0.039 \\
 \midrule
 Areas & 83 & 42 & & 15 & 16 & \\
 \bottomrule

@@ -3,21 +3,21 @@
  & \begin{tabular}[b]{@{}c@{}}World\\cold\end{tabular} & \begin{tabular}[b]{@{}c@{}}World\\hot\end{tabular} & \begin{tabular}[b]{@{}c@{}}U.S.\\cold\end{tabular} & \begin{tabular}[b]{@{}c@{}}U.S.\\hot\end{tabular} \\
 \midrule
 Reference forecaster$^a$ & 1.000 & 1.000 & 1.000 & 1.000 \\
-Equal weights & 1.151 & 0.919 & 1.323 & 0.885 \\
-Best single (per area) & 0.877 & 0.789 & 0.941 & 0.751 \\
-Pooled DF weights & 0.848 & 0.743 & 0.888 & 0.688 \\
-Per-area DF weights & 0.804 & 0.736 & 0.832 & 0.689 \\
-Shrinkage to pooled & 0.800 & 0.723 & 0.827 & 0.678 \\
-Two-step $k$-means & 0.804 & 0.739 & 0.844 & 0.693 \\
-Forecast-then-commit, per area & 1.004 & 0.803 & 1.163 & 0.756 \\
-Forecast-then-commit, grouped & 0.982 & 0.766 & 1.169 & 0.712 \\
-Neural gate (deep MoE) & 0.844 & 0.763 & 0.921 & 0.723 \\
-GDMA & 0.815 & 0.736 & 0.860 & 0.693 \\
-\textbf{Soft GDMA} & 0.803 & 0.728 & 0.841 & 0.684 \\
-Fair soft GDMA & 0.804 & 0.730 & 0.851 & 0.686 \\
+Equal weights & 1.239 & 0.975 & 1.620 & 1.066 \\
+Best single (per area) & 0.952 & 0.879 & 0.962 & 0.810 \\
+Pooled DF weights & 0.903 & 0.827 & 0.975 & 0.776 \\
+Per-area DF weights & 0.901 & 0.822 & 0.923 & 0.754 \\
+Shrinkage to pooled & 0.889 & 0.817 & 0.912 & 0.751 \\
+Two-step $k$-means & 0.876 & 0.827 & 0.913 & 0.768 \\
+Quantile-regression comb. & 1.138 & 0.971 & 1.144 & 0.864 \\
+Forecast-then-commit, per area & 1.048 & 0.910 & 1.106 & 0.820 \\
+Forecast-then-commit, grouped & 0.954 & 0.885 & 1.012 & 0.808 \\
+GDMA & 0.877 & 0.818 & 0.905 & 0.748 \\
+\textbf{Soft GDMA} & 0.879 & 0.814 & 0.898 & 0.747 \\
+Fair soft GDMA & 0.884 & 0.815 & 0.904 & 0.752 \\
 \midrule
-Soft GDMA / reference, 90\% CI & [0.77, 0.84] & [0.70, 0.75] & [0.80, 0.89] & [0.65, 0.72] \\
-Soft GDMA / best single, 90\% CI & [0.89, 0.94] & [0.90, 0.94] & [0.86, 0.93] & [0.88, 0.94] \\
+Soft GDMA / reference, 90\% CI & [0.83, 0.93] & [0.79, 0.84] & [0.86, 0.94] & [0.71, 0.79] \\
+Soft GDMA / best single, 90\% CI & [0.90, 0.94] & [0.91, 0.94] & [0.91, 0.96] & [0.89, 0.95] \\
 Area-days & 9,624 & 9,623 & 3,542 & 3,540 \\
 \bottomrule
 \end{tabular}

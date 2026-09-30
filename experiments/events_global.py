@@ -45,8 +45,8 @@ def load(suffix):
         return None
     r = dict(np.load(p, allow_pickle=True))
     ng = os.path.join(ROOT, "results", f"neuralgate_global_w28_taucalibrated{suffix}.npz")
-    if os.path.exists(ng):
-        g = np.load(ng, allow_pickle=True)
+    g = np.load(ng, allow_pickle=True) if os.path.exists(ng) else None
+    if g is not None and np.array_equal(g["eval_days"], r["eval_days"]):    # skip a stale gate file
         r["daily_cost"] = np.concatenate([r["daily_cost"], g["daily_cost"]])
         r["methods"] = np.concatenate([r["methods"], g["methods"]])
     return r

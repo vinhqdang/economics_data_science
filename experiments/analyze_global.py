@@ -87,7 +87,9 @@ def load(W, suffix=None):
     ng = os.path.join(ROOT, "results", f"neuralgate_{tag}.npz")
     if os.path.exists(ng):
         g = np.load(ng, allow_pickle=True)
-        assert np.array_equal(g["eval_days"], r["eval_days"])
+        if not np.array_equal(g["eval_days"], r["eval_days"]):
+            print("WARNING: neural-gate file for", tag, "does not match the backtest (stale); skipped")
+            return r
         r["daily_cost"] = np.concatenate([r["daily_cost"], g["daily_cost"]])
         r["short_hours"] = np.concatenate([r["short_hours"], g["short_hours"]])
         r["methods"] = np.concatenate([r["methods"], g["methods"]])

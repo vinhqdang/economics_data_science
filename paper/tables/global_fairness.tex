@@ -1,23 +1,23 @@
-\begin{tabular}{@{}lccccccc@{}}
+\begin{tabular}{@{}lcccccccc@{}}
 \toprule
- & \multicolumn{3}{c}{Per-area cost ratio} & Areas & Worst & Data-rich & Data-poor \\
-\cmidrule(lr){2-4}
-Method & P10 & Median & P90 & harmed & continent$^d$ & areas & areas$^e$ \\
+ & \multicolumn{3}{c}{Per-area cost ratio} & \multicolumn{2}{c}{Areas harmed vs} & Worst & Data-rich & Data-poor \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+Method & P10 & Median & P90 & ref. & best single & continent$^d$ & areas & areas$^e$ \\
 \midrule
-Single best forecaster$^a$ & 1.000 & 1.000 & 1.000 & 0.00 & 1.000 & 1.000 & 1.000 \\
-Equal weights & 0.949 & 1.075 & 1.454 & 0.78 & 1.166 & 1.168 & 1.103 \\
-Best single (per area) & 0.785 & 0.901 & 1.011 & 0.15 & 0.930 & 0.857 & 0.915 \\
-Pooled DF weights & 0.785 & 0.883 & 1.009 & 0.13 & 0.891 & 0.853 & 0.862 \\
-Per-area DF weights & 0.761 & 0.873 & 0.980 & 0.06 & 0.909 & 0.818 & 0.903 \\
-Shrinkage to pooled & 0.763 & 0.860 & 0.969 & 0.05 & 0.882 & 0.816 & 0.863 \\
-Two-step $k$-means & 0.773 & 0.859 & 0.973 & 0.05 & 0.881 & 0.816 & 0.863 \\
-Forecast-then-commit, per area & 0.784 & 0.905 & 1.154 & 0.27 & 0.959 & 0.907 & 0.916 \\
-Forecast-then-commit, grouped & 0.786 & 0.887 & 1.164 & 0.26 & 0.975 & 0.904 & 0.873 \\
-Neural gate (deep MoE) & 0.791 & 0.916 & 1.135 & 0.32 & 1.041 & 0.903 & 1.036 \\
-GDMA & 0.772 & 0.863 & 0.978 & 0.08 & 0.887 & 0.819 & 0.863 \\
-\textbf{Soft GDMA} & 0.763 & 0.856 & 0.967 & 0.04 & 0.883 & 0.811 & 0.863 \\
-Fair soft GDMA & 0.761 & 0.851 & 0.956 & 0.02 & 0.871 & 0.808 & 0.859 \\
+Reference forecaster$^a$ & 1.000 & 1.000 & 1.000 & 0.00 & 0.62 & 1.000 & 1.000 & 1.000 \\
+Equal weights & 0.963 & 1.050 & 1.652 & 0.71 & 0.79 & 1.337 & 1.231 & 1.024 \\
+Best single (per area) & 0.876 & 0.976 & 1.047 & 0.38 & -- & 1.010 & 0.917 & 1.006 \\
+Pooled DF weights & 0.856 & 0.935 & 1.037 & 0.19 & 0.24 & 0.984 & 0.901 & 0.922 \\
+Per-area DF weights & 0.852 & 0.952 & 1.034 & 0.27 & 0.14 & 0.991 & 0.888 & 0.983 \\
+Shrinkage to pooled & 0.848 & 0.941 & 1.027 & 0.21 & 0.09 & 0.987 & 0.883 & 0.958 \\
+Two-step $k$-means & 0.846 & 0.927 & 1.020 & 0.18 & 0.14 & 0.974 & 0.880 & 0.936 \\
+Quantile-regression comb. & 0.917 & 1.032 & 1.221 & 0.58 & 0.86 & 1.127 & 1.010 & 1.097 \\
+Forecast-then-commit, per area & 0.887 & 0.985 & 1.232 & 0.45 & 0.60 & 1.047 & 0.982 & 1.064 \\
+Forecast-then-commit, grouped & 0.868 & 0.972 & 1.214 & 0.41 & 0.52 & 1.053 & 0.962 & 1.028 \\
+GDMA & 0.854 & 0.934 & 1.015 & 0.17 & 0.11 & 0.972 & 0.879 & 0.947 \\
+\textbf{Soft GDMA} & 0.843 & 0.943 & 1.028 & 0.20 & 0.06 & 0.978 & 0.878 & 0.964 \\
+Fair soft GDMA & 0.840 & 0.937 & 1.022 & 0.19 & 0.03 & 0.977 & 0.875 & 0.960 \\
 \midrule
-Areas & & 125 & & & & 93 & 32 \\
+Areas & & 125 & & & & & 88 & 37 \\
 \bottomrule
 \end{tabular}
