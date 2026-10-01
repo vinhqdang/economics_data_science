@@ -7,7 +7,7 @@ Research code and manuscript for
 > Prepared for the *Journal of Management Science and Engineering* special issue
 > [Economics and Management Empowered by Data Science](https://www.sciencedirect.com/special-issue/330213/economics-and-management-empowered-by-data-science) (deadline 31 October 2026).
 
-The compiled manuscript is `paper/main.pdf`.
+The compiled manuscript is `paper/gdma_storage_siting_manuscript.pdf`.
 
 ## The management problem
 
@@ -114,5 +114,5 @@ python experiments/income.py            # needs World Bank, IMF and FRED files i
 python experiments/run_all.py --jobs 3  # panels, candidates, all backtests, neural gates, storage siting, simulation
 python experiments/backtest_global.py --window 28 --tau 0.99 --weather plus   # scarcity-level critical ratio (tail-risk table)
 python experiments/analyze.py && python experiments/analyze_global.py && python experiments/events_global.py && python experiments/sim_tables.py
-cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+cd paper && pdflatex gdma_storage_siting_manuscript && bibtex gdma_storage_siting_manuscript && pdflatex gdma_storage_siting_manuscript && pdflatex gdma_storage_siting_manuscript
 ```
