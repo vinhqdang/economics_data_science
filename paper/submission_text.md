@@ -1,0 +1,8 @@
+## Title
+From Forecasts to Batteries: Grouped Decision-Focused Model Averaging for Capacity Commitment and Storage Siting on Five Continents
+
+## Abstract
+Grid operators commit capacity a day ahead from many demand forecasts, and planners must decide where to install batteries. We propose grouped decision-focused model averaging (GDMA): it learns segments of grid areas and segment-specific forecast weights by minimising each area's realised commitment cost, not forecast error. We prove a finite-sample oracle inequality and segment recovery for the fixed-G estimator. On 125 grid areas on five continents, using public data for 2018–2026 and only information available at gate closure, soft GDMA cuts commitment cost by 12% against a reference forecaster (13–17% against the operators' own forecasts in the United States) and by 4 percentage points against each area's best single forecast. A decision-focused neural gate costs 7 percentage points more, and grouping adds little over shrinkage. Soft GDMA leaves 6% of areas worse off and shows no systematic income gradient. Weather forecasts halve the gap to the operators during Winter Storm Elliott but do not close it. In a stylised storage model, the reference rule needs 34 GW of batteries to match soft GDMA without any. Lower cost is better throughout.
+
+## Keywords
+model averaging; decision-focused learning; latent groups; foundation models; fairness; capacity commitment; battery storage siting; energy management
