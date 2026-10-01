@@ -231,10 +231,57 @@ def pipeline():
     plt.close(fig)
 
 
+
+
+def graphical_abstract(df):
+    """Single-panel summary for the journal's graphical abstract (13 x 5 in)."""
+    fig = plt.figure(figsize=(13, 5))
+    fig.patch.set_facecolor("white")
+    gs = fig.add_gridspec(1, 3, width_ratios=[1.0, 1.7, 0.95], wspace=0.04, left=0.01, right=0.99, top=0.88, bottom=0.10)
+    # 1. idea
+    a = fig.add_subplot(gs[0, 0])
+    a.set_xlim(0, 10)
+    a.set_ylim(0, 10)
+    a.axis("off")
+    a.text(0, 9.7, "1  Many forecasts, one decision", fontsize=12, fontweight="bold", va="center")
+    for i, t in enumerate(["Operator's forecast", "Statistical models", "Machine learning", "Foundation model", "Weather-driven models"]):
+        box(a, 0.1, 7.6 - 1.15 * i, 4.0, 0.85, t, "#e5f5e0", fs=9)
+        arrow(a, 4.15, 8.0 - 1.15 * i, 5.3, 5.5)
+    box(a, 5.4, 4.4, 4.4, 2.2, "GDMA\nlearns segments of\ngrid areas and the\nforecast weights\nfrom decision cost", "#fff7bc", fs=9.5, bold=True)
+    arrow(a, 7.6, 4.35, 7.6, 3.2)
+    box(a, 5.4, 1.5, 4.4, 1.6, "Day-ahead capacity\ncommitment\nper grid area", "#fde0dd", fs=9.5)
+    arrow(a, 7.6, 1.45, 7.6, 0.6)
+    a.text(7.6, 0.3, "storage siting", ha="center", fontsize=9.5, style="italic")
+    # 2. map
+    b = fig.add_subplot(gs[0, 1])
+    basemap(b, (-170, 180, -50, 72))
+    norm = TwoSlopeNorm(vmin=0.55, vcenter=1.0, vmax=1.25)
+    sc = scatter_map(b, df, "ratio", norm, "RdYlGn_r", smin=22, smax=200)
+    b.set_title("2  125 grid areas, 5 continents, public data 2018-2026", fontsize=12, fontweight="bold", loc="left")
+    cb = fig.colorbar(sc, ax=b, orientation="horizontal", fraction=0.05, pad=0.02, aspect=45)
+    cb.set_label("Soft GDMA cost / reference cost (lower is better)", fontsize=9)
+    # 3. results
+    c = fig.add_subplot(gs[0, 2])
+    c.set_xlim(0, 10)
+    c.set_ylim(0, 10)
+    c.axis("off")
+    c.text(0, 9.7, "3  Results (out of sample)", fontsize=12, fontweight="bold", va="center")
+    for y, big, small in [(7.6, "-12%", "commitment cost vs reference\nforecaster, worldwide"),
+                          (5.1, "-4 pp", "vs each area's best\nsingle forecast"),
+                          (2.6, "34 GW", "of batteries the reference\nrule needs to match soft GDMA"),
+                          (0.3, "6%", "of areas worse off than their\nown best candidate")]:
+        c.text(0.0, y + 1.0, big, fontsize=20, fontweight="bold", color="#b2182b" if big != "34 GW" else "#2166ac", va="center")
+        c.text(3.9, y + 1.0, small, fontsize=8.5, va="center")
+    fig.suptitle("Grouped decision-focused model averaging for capacity commitment and storage siting", fontsize=13, fontweight="bold", y=0.985)
+    fig.savefig(os.path.join(FIG, "graphical_abstract.pdf"))
+    fig.savefig(os.path.join(FIG, "graphical_abstract.png"), dpi=220)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     pipeline()
     df, r, meth = area_table()
-    print(df.groupby("continent").ratio.describe().round(3))
     map_gain(df)
     map_storage(df)
     fig_elliott(r, meth)
+    graphical_abstract(df)

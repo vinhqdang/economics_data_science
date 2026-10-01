@@ -1,13 +1,11 @@
 \begin{abstract}
-Grid operators must commit capacity a day ahead, and planners must decide where to install new batteries.
-Both decisions rest on how the many available demand forecasts---operators' own forecasts, statistical models, machine learning, models driven by archived numerical weather forecasts, and pretrained foundation models---are combined.
-We propose \emph{grouped decision-focused model averaging} (GDMA), which jointly learns a small number of latent segments of decision units and segment-specific combination weights by minimising the realised decision cost, with each unit's own cost asymmetry, rather than forecast error; a soft version shrinks each unit's weights towards its segment, and a fair version counts every unit's relative improvement equally.
-We prove a finite-sample oracle inequality that separates the cost of learning segment memberships from the cost of learning weights, show that GDMA is asymptotically optimal and attains the risk of the infeasible unit-specific optimum when segments exist, and prove that it recovers the segments with probability approaching one.
-A planning stage turns the residual risk of the learned rule into an efficient or a fair siting of storage.
-On 125 grid areas in North America, Europe, Oceania, Asia and Africa, using public hourly data from 2018 to 2026 and only information available at the day-ahead gate closure, soft GDMA lowers the stylised out-of-sample commitment cost by 12\% worldwide relative to a reference forecaster (the operators' official forecast in the United States, a model forecast elsewhere) and by 4 percentage points relative to each area's best single candidate; for the 46 U.S.\ balancing authorities the saving relative to their official forecasts is 13--17\%.
-The gain comes from combining forecasts for the decision rather than for accuracy and from sharing structure across areas; the grouped variants, two-step clustering and plain GDMA are statistically indistinguishable in a model confidence set, and decision-focused shrinkage comes close.
-Forecast-then-commit and an unconstrained quantile-regression combination do worse, a decision-focused neural mixture-of-experts gate has a cost 7 percentage points higher (lower cost is better throughout), and the simplex-constrained rules avoid the extreme weeks that ruin the other rules.
-Soft GDMA makes 6\% of grid areas worse off than their own best candidate and its fair version 3\%; we find no systematic income gradient, though the data cannot exclude a moderate one.
-Archived deterministic and ensemble weather forecasts halve the gap to the operators' own forecasts during Winter Storm Elliott, from 20\% to about 10\%, but do not close it.
-In a stylised storage model, the reference rule needs 34\,GW of optimally sited batteries to match the commitment cost of soft GDMA without any; siting storage on the error profile of the wrong rule loses 2--4\% of a programme's value, and maximin-fair siting raises the worst-served continent's benefit at a price of fairness of 7--9\%.
+Grid operators commit capacity a day ahead from many demand forecasts, and planners must decide where to install batteries.
+We propose \emph{grouped decision-focused model averaging} (GDMA): it learns segments of grid areas and segment-specific forecast weights by minimising each area's realised commitment cost, not forecast error.
+We prove a finite-sample oracle inequality and segment recovery for the fixed-$G$ estimator.
+On 125 grid areas on five continents, using public data for 2018--2026 and only information available at gate closure, soft GDMA cuts commitment cost by 12\% against a reference forecaster (13--17\% against the operators' own forecasts in the United States) and by 4 percentage points against each area's best single forecast.
+A decision-focused neural gate costs 7 percentage points more, and grouping adds little over shrinkage.
+Soft GDMA leaves 6\% of areas worse off and shows no systematic income gradient.
+Weather forecasts halve the gap to the operators during Winter Storm Elliott but do not close it.
+In a stylised storage model, the reference rule needs 34\,GW of batteries to match soft GDMA without any.
+Lower cost is better throughout.
 \end{abstract}
