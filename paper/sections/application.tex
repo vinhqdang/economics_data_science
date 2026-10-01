@@ -2,6 +2,8 @@
 
 \subsection{Data}
 
+\emph{Reading convention.} Every cost in this paper is an operating cost, so \emph{lower is better}; a ratio below 1 means a lower cost than the benchmark named in the table, and ``more expensive'' means worse. Gains, savings, storage values and the adjusted Rand index are the opposite: higher is better. Each caption states the direction.
+
 We use the complete public record of the U.S.\ Energy Information Administration's Hourly Electric Grid Monitor (Form EIA-930; \citealp{EIA930}), downloaded on 29 September 2026.
 For every balancing authority (BA) in the lower 48 states the file reports hourly demand, the BA's own day-ahead demand forecast and total interchange with neighbouring BAs.
 We use the period 1 January 2019 to 26 September 2026 in UTC hours and exclude the fourteen regional aggregates.
@@ -61,7 +63,7 @@ All hold-out choices ($G$, $\kappa$ and the shrinkage intensity) use the same sp
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample system-wide commitment cost, 1 May 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:main}
+\caption{Out-of-sample system-wide commitment cost, 1 May 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:main}
 \footnotesize
 \input{tables/main.tex}
 \par\smallskip\footnotesize $^a$ Share of the 46 BAs whose own cost is lower than under the official-forecast policy ($W=28$).
@@ -93,7 +95,7 @@ The saving is not driven by a few operators, but it is not universal either: 63\
 
 \begin{table}[t]
 \centering
-\caption{Secondary metrics for $W=28$ days.}\label{tab:secondary}
+\caption{Secondary metrics for $W=28$ days. Scale-free cost and shortfall frequency: lower is better for cost; the shortfall frequency should be close to the target. DM statistic: positive values mean the method is more expensive than soft GDMA.}\label{tab:secondary}
 \small
 \input{tables/secondary.tex}
 \par\smallskip\footnotesize
@@ -109,7 +111,7 @@ The cumulative saving builds up steadily rather than in a few episodes.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/cumulative.pdf}
-\caption{Cumulative system-wide cost saving relative to the official-forecast policy ($W=28$).}\label{fig:cum}
+\caption{Cumulative system-wide cost saving relative to the official-forecast policy ($W=28$). Higher is better. The curve is the cumulative cost saving: an upward slope means soft GDMA is cheaper.}\label{fig:cum}
 \end{figure}
 
 \subsection{Segments}
@@ -131,7 +133,7 @@ What separates them is how much the operator's own forecast adds to what can be 
 
 \begin{table}[t]
 \centering
-\caption{System cost during extreme events relative to the official-forecast policy ($W=28$): Winter Storm Uri (10--20 February 2021), Winter Storm Elliott (21--26 December 2022, the window of the FERC--NERC inquiry) and the summer heat of 15 July--15 August 2023.}\label{tab:events}
+\caption{System cost during extreme events relative to the official-forecast policy ($W=28$): Winter Storm Uri (10--20 February 2021), Winter Storm Elliott (21--26 December 2022, the window of the FERC--NERC inquiry) and the summer heat of 15 July--15 August 2023. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:events}
 \small
 \input{tables/events.tex}
 \end{table}
@@ -145,7 +147,7 @@ Section~\ref{sec:global} adds candidates driven by archived deterministic and en
 
 \begin{table}[t]
 \centering
-\caption{Sensitivity to the cost asymmetry ($W=28$): system cost relative to the official-forecast policy when every BA has the same critical ratio $\tau$, and under the calibrated heterogeneous ratios.}\label{tab:tau}
+\caption{Sensitivity to the cost asymmetry ($W=28$): system cost relative to the official-forecast policy when every BA has the same critical ratio $\tau$, and under the calibrated heterogeneous ratios. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:tau}
 \small
 \input{tables/tau.tex}
 \end{table}

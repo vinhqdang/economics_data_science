@@ -70,7 +70,7 @@ Unlike GDMA, it can let weights vary continuously with observed conditions; like
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026, eleven candidates including the three weather models fed GFS and GEFS forecasts), relative to the reference forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. $^\dagger$: member of the 90\% model confidence set (world daily cost, block bootstrap).}\label{tab:global}
+\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026, eleven candidates including the three weather models fed GFS and GEFS forecasts), relative to the reference forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. $^\dagger$: member of the 90\% model confidence set (world daily cost, block bootstrap). Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:global}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_main.tex}
@@ -95,7 +95,7 @@ The ranking is also similar across estimation windows and critical ratios (Table
 
 \begin{table}[t]
 \centering
-\caption{World commitment cost relative to the reference forecaster for four candidate sets ($W=28$): eight candidates without weather; nine with the temperature model fed archived GFS day-ahead forecasts; eleven with, in addition, the multi-variable model and its ensemble-margin version (main specification); and nine with the temperature model fed realised temperatures (upper bound on temperature information).}\label{tab:specs}
+\caption{World commitment cost relative to the reference forecaster for four candidate sets ($W=28$): eight candidates without weather; nine with the temperature model fed archived GFS day-ahead forecasts; eleven with, in addition, the multi-variable model and its ensemble-margin version (main specification); and nine with the temperature model fed realised temperatures (upper bound on temperature information). Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:specs}
 \footnotesize
 \input{tables/global_specs.tex}
 \end{table}
@@ -112,7 +112,7 @@ During Winter Storm Uri, soft GDMA is 11--13\% cheaper than the operators in eve
 
 \begin{table}[t]
 \centering
-\caption{Winter Storm Elliott (21--26 December 2022, 46 U.S.\ balancing authorities): commitment cost relative to the operators' official day-ahead forecasts, by candidate set ($W=28$), and in the main set without the BA-days on which load was shed.}\label{tab:elliott}
+\caption{Winter Storm Elliott (21--26 December 2022, 46 U.S.\ balancing authorities): commitment cost relative to the operators' official day-ahead forecasts, by candidate set ($W=28$), and in the main set without the BA-days on which load was shed. Lower is better: values below 1 mean a lower cost than the benchmark. Entries above 1 mean the rule is more expensive than the operators.}\label{tab:elliott}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_elliott.tex}
@@ -124,7 +124,7 @@ Elliott is therefore not typical of extreme weather in general; it is an abrupt 
 
 \begin{table}[t]
 \centering
-\caption{Commitment cost relative to the reference forecaster on extreme-temperature area-days ($W=28$): days on which an area's daily mean temperature is below its 2.5\% or above its 97.5\% quantile. Intervals: moving-block bootstrap over days (7-day blocks, 1,000 replications).}\label{tab:extremes}
+\caption{Commitment cost relative to the reference forecaster on extreme-temperature area-days ($W=28$): days on which an area's daily mean temperature is below its 2.5\% or above its 97.5\% quantile. Intervals: moving-block bootstrap over days (7-day blocks, 1,000 replications). Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:extremes}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_extremes.tex}
@@ -141,7 +141,7 @@ Equal weights, which give weight to naive rules that over-commit, have the light
 
 \begin{table}[t]
 \centering
-\caption{Tail risk of the world's daily commitment cost relative to the reference forecaster ($W=28$): total, average of the costliest 5\% of days (CVaR$_{95}$) and costliest week, for the calibrated critical ratios, without each area's first eight weeks, and with a scarcity-level critical ratio of 0.99 for every area.}\label{tab:tail}
+\caption{Tail risk of the world's daily commitment cost relative to the reference forecaster ($W=28$): total, average of the costliest 5\% of days (CVaR$_{95}$) and costliest week, for the calibrated critical ratios, without each area's first eight weeks, and with a scarcity-level critical ratio of 0.99 for every area. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:tail}
 \scriptsize
 \setlength{\tabcolsep}{2.5pt}
 \input{tables/global_tail.tex}
@@ -159,7 +159,7 @@ In the U.S.\ part of the sample, where an official forecast exists, an operator 
 
 \begin{table}[t]
 \centering
-\caption{Commitment cost of areas entering the panel, relative to the reference forecaster ($W=28$, eleven candidates).}\label{tab:entry}
+\caption{Commitment cost of areas entering the panel, relative to the reference forecaster ($W=28$, eleven candidates). Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:entry}
 \footnotesize
 \input{tables/global_entry.tex}
 \par\smallskip\footnotesize $^b$ The first eight weeks after an area has at least one day of data in the estimation window.
@@ -175,7 +175,7 @@ The segmentation therefore does not follow geography; it is consistent with diff
 
 \begin{table}[t]
 \centering
-\caption{Distribution of the benefits across the 125 grid areas ($W=28$, eleven candidates): percentiles of each area's cost relative to the reference forecaster, share of areas made worse off than under the reference and than under their own best single candidate, median ratio in the worst-served continent, and cost ratios for data-rich and data-poor areas.}\label{tab:fairness}
+\caption{Distribution of the benefits across the 125 grid areas ($W=28$, eleven candidates): percentiles of each area's cost relative to the reference forecaster, share of areas made worse off than under the reference and than under their own best single candidate, median ratio in the worst-served continent, and cost ratios for data-rich and data-poor areas. Cost ratios: lower is better; shares of areas made worse off: lower is better.}\label{tab:fairness}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \input{tables/global_fairness.tex}
@@ -200,7 +200,7 @@ Table~\ref{tab:income} reports the results.
 
 \begin{table}[t]
 \centering
-\caption{Benefits by income ($W=28$): commitment cost relative to the reference forecaster by World Bank income group and, within the United States, for the balancing authorities in the lowest and highest third of state per-capita income; Spearman rank correlations between an area's cost ratio and income.}\label{tab:income}
+\caption{Benefits by income ($W=28$): commitment cost relative to the reference forecaster by World Bank income group and, within the United States, for the balancing authorities in the lowest and highest third of state per-capita income; Spearman rank correlations between an area's cost ratio and income. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:income}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \input{tables/global_income.tex}

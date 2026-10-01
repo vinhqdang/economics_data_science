@@ -19,12 +19,12 @@ The relevant planning question is therefore not whether, but \emph{where}, to pl
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/storage_frontier.pdf}
-\caption{Annual system-wide commitment cost as a function of battery power installed and optimally sited across the 125 grid areas, for five commitment rules. Costs valued at \$10 per MWh of idle committed capacity; annual values average over each area's own evaluation period.}\label{fig:frontier}
+\caption{Annual system-wide commitment cost as a function of battery power installed and optimally sited across the 125 grid areas, for five commitment rules. Costs valued at \$10 per MWh of idle committed capacity; annual values average over each area's own evaluation period. Lower is better.}\label{fig:frontier}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Storage siting on five continents. Cost of each commitment rule without storage, battery power it needs (optimally sited) to reach the cost of soft GDMA without storage, and the optimal siting of a 10\,GW storage programme.}\label{tab:storage}
+\caption{Storage siting on five continents. Cost of each commitment rule without storage, battery power it needs (optimally sited) to reach the cost of soft GDMA without storage, and the optimal siting of a 10\,GW storage programme. Cost: lower is better; battery power: lower means the rule needs less storage to reach the same cost.}\label{tab:storage}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/storage.tex}
@@ -46,7 +46,7 @@ If the planner instead uses the error profile of the reference forecaster, North
 
 \begin{table}[t]
 \centering
-\caption{Annual value (million USD) of storage programmes of different sizes when operations follow soft GDMA, by the commitment rule whose error profile was used to site the batteries.}\label{tab:siting}
+\caption{Annual value (million USD) of storage programmes of different sizes when operations follow soft GDMA, by the commitment rule whose error profile was used to site the batteries. Higher is better. Value is the reduction in annual cost.}\label{tab:siting}
 \small
 \input{tables/siting_value.tex}
 \end{table}
@@ -56,7 +56,7 @@ The location of storage therefore matters less than the existence of a good comm
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample siting under soft GDMA operations (million USD per year): batteries are sited on the value curves of the first half of the evaluation period and valued on the second half, and compared with siting on the second half itself (infeasible oracle).}\label{tab:oos}
+\caption{Out-of-sample siting under soft GDMA operations (million USD per year): batteries are sited on the value curves of the first half of the evaluation period and valued on the second half, and compared with siting on the second half itself (infeasible oracle). Higher is better.}\label{tab:oos}
 \small
 \input{tables/siting_oos.tex}
 \end{table}
@@ -69,7 +69,7 @@ Both sources of loss, the choice of rule and the estimation of the profile, are 
 
 \begin{table}[t]
 \centering
-\caption{Efficient and fair siting of storage programmes under soft GDMA operations: annual value, the relative benefit of the worst-served continent, and the price of fairness (PoF, the share of the efficient programme's value given up).}\label{tab:fairsiting}
+\caption{Efficient and fair siting of storage programmes under soft GDMA operations: annual value, the relative benefit of the worst-served continent, and the price of fairness (PoF, the share of the efficient programme's value given up). Value and relative benefit: higher is better; price of fairness: lower is better.}\label{tab:fairsiting}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/storage_fair.tex}
