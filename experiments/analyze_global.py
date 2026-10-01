@@ -274,7 +274,7 @@ def main():
             across[f"{a}-{b}"] = np.nanmean(co[np.ix_(cont == a, cont == b)])
 
     # ---------------- figure: storage frontier ---------------------------------
-    pol = {"Official": ("Single best forecaster", "#7f7f7f", "-."), "EW": ("Equal weights", "#bf9000", ":"),
+    pol = {"Official": ("Reference forecaster", "#7f7f7f", "-."), "EW": ("Equal weights", "#bf9000", ":"),
            "Pooled": ("Pooled DF", "#c55a11", "--"), "PerUnit": ("Per-area DF", "#548235", ":"),
            "GDMA-soft": ("Soft GDMA", "#1f4e79", "-")}
     fig, ax = plt.subplots(figsize=(6.2, 3.1))
@@ -296,7 +296,7 @@ def main():
     if os.path.exists(bp):
         bud = pd.read_csv(bp)
         eq = pd.read_csv(os.path.join(ROOT, "results", f"storage_equivalent{SS}.csv")).set_index("policy")
-        SL = {"Official": "Single best forecaster", "EW": "Equal weights", "Pooled": "Pooled DF",
+        SL = {"Official": "Reference forecaster", "EW": "Equal weights", "Pooled": "Pooled DF",
               "PerUnit": "Per-area DF", "FTO-PerUnit": "Forecast-then-commit", "GDMA": "GDMA",
               "GDMA-soft": r"\textbf{Soft GDMA}"}
         lines = [r"\begin{tabular}{@{}lccccccc@{}}", r"\toprule",

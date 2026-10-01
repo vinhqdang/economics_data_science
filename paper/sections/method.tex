@@ -133,7 +133,7 @@ Energy-justice scholarship stresses that the distribution of the benefits of ene
 We therefore add two fair variants and audit every method for how its benefits are distributed.
 
 \paragraph{Fair soft GDMA (one area, one vote).}
-Let $c^0_i$ be the in-window cost of unit $i$ under its single best forecaster.
+Let $c^0_i$ be the in-window cost of unit $i$ under the reference forecaster (candidate~1, the official forecast where one exists).
 Fair soft GDMA solves the soft GDMA problem with every unit's costs divided by $c^0_i$ (normalised to mean one), that is, with $u_i$ and $o_i$ replaced by $\omega_iu_i$ and $\omega_io_i$, $\omega_i\propto1/c^0_i$.
 Each unit then counts in proportion to its \emph{relative} improvement, so that a 10\% saving in a 70\,MW municipal utility weighs as much as a 10\% saving in a 90\,GW regional market.
 This is the relative-cost analogue of group-robust learning \citep{Sagawa2020gdro}; it changes only the weights of the criterion, not the algorithm.
@@ -145,4 +145,4 @@ We consider two fair versions of~\eqref{eq:siting} over continents $c$ (any grou
 The price of fairness is the share of the efficient programme's value that each fair version gives up.
 
 \paragraph{Audit.}
-For every method we report the distribution across units of the ratio of its cost to the unit's own single best forecaster, the share of units made worse off, the median ratio of the worst-served continent, and separate ratios for data-rich and data-poor systems.
+For every method we report the distribution across units of the ratio of its cost to the unit's cost under the reference forecaster, the share of units made worse off than under the reference forecaster and than under their own best single candidate (chosen on the estimation window), the median ratio of the worst-served continent, and separate ratios for data-rich and data-poor systems.

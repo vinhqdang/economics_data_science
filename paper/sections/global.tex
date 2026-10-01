@@ -53,7 +53,7 @@ Against realised temperatures the GFS forecasts have a root-mean-squared error o
 A version of the temperature model with realised temperatures is reported as an upper bound on the value of temperature information.
 The \emph{multi-variable model} adds, from the same GFS runs and lead times, the forecast 2-m relative humidity, 10-m wind speed and downward short-wave radiation at the surface (99.8\% of the files from 2021 retrieved), and from the GEFSv12 ensemble \citep{GEFSv12,GEFSarchive} the ensemble standard deviation of 2-m temperature at 0.5 degrees (available for every day from October 2020), each hourly and as daily means.
 The spread measures how uncertain tomorrow's weather is, which a point forecast cannot convey, so the third weather candidate uses it for the commitment margin rather than for the point forecast: it takes the multi-variable forecast and multiplies its quantile margin by the ratio of the operating day's spread to its mean over the previous 28 days, clipped to $[0.5,3]$ (\emph{ensemble margin}).
-The rule and its constants were fixed before the evaluation and not tuned, but with a single archive and a raw, uncalibrated ensemble spread it should be read as exploratory.
+The rule was motivated by the gap to the operators' forecasts in Winter Storm Elliott; its constants were chosen once and not tuned, but since it was designed with that event in view, and uses a raw, uncalibrated ensemble spread from a single archive, it should be read as exploratory.
 On an average day the spread says little about the size of the error (rank correlation 0.04 across area-days, median 0.08 within areas), but it is large precisely on days of unusual weather.
 Over the evaluation period the mean absolute errors, scaled by mean demand, are 3.5\% for the temperature and multi-variable models (3.5\% with exact temperatures), 3.6\% for LightGBM, 3.8\% for Chronos and for the hourly regression, 4.5\% for the official/LightGBM candidate and 6--8\% for the naive rules; the foundation model is thus competitive with a model trained on the data themselves.
 
@@ -70,95 +70,125 @@ Unlike GDMA, it can let weights vary continuously with observed conditions; like
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026, eleven candidates including the three weather models fed GFS and GEFS forecasts), relative to the single best forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:global}
+\caption{Out-of-sample commitment cost on five continents ($W=28$ days, May 2018 to September 2026, eleven candidates including the three weather models fed GFS and GEFS forecasts), relative to the reference forecaster. Bold: lowest in the column. Stars: Diebold--Mariano test of equal daily cost against soft GDMA (Newey--West, 7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. $^\dagger$: member of the 90\% model confidence set (world daily cost, block bootstrap).}\label{tab:global}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_main.tex}
 \par\smallskip\footnotesize $^a$ The operator's official forecast where one is published (United States), otherwise the global LightGBM forecast.
 \end{table}
 
-Table~\ref{tab:global} shows that the results of the U.S.\ analysis hold on every continent.
-Worldwide, soft GDMA lowers the commitment cost by 18.7\% relative to the single best forecaster, and its fair variant, discussed below, by 19.0\%.
-Soft GDMA is significantly cheaper, at the 1\% level, than every competitor except its own fair variant, which is cheaper still (at the 5\% level), and the two forecast-then-commit methods, which are 11\% more expensive but whose daily costs are so volatile that the test is inconclusive; its margin over the closest competitors, shrinkage and two-step clustering, is small (0.5\%) but statistically clear.
-One of the two GDMA variants has the lowest cost in North America, Europe, Asia and Africa, although shrinkage is within 0.1 points in North America; in Oceania, with only five regions, the neural-gate and per-area rules are 0.5--0.6 points cheaper than fair soft GDMA and the forecast-then-commit rules are level with it.
+Table~\ref{tab:global} shows that the main findings of the U.S.\ analysis carry over to the world panel, with smaller savings.
+Worldwide, soft GDMA lowers the commitment cost by 11.6\% relative to the reference forecaster (the operators' official forecast in the United States, a global LightGBM forecast elsewhere) and by 4.2 percentage points relative to the best single candidate chosen in each window; its fair variant, discussed below, lowers it by 11.9\%.
+At the 90\% level the model confidence set \citep{Hansen2011mcs} contains four methods---two-step clustering, GDMA, soft GDMA and fair soft GDMA---and excludes shrinkage towards pooled weights only narrowly ($p=0.098$), per-area and pooled weights equally narrowly, and the neural gate, the quantile-regression combination and the best single candidate more clearly.
+Within the confidence set the differences are below 0.4\% and not statistically distinguishable; fair soft GDMA is the cheapest in total (0.881), significantly so against soft GDMA.
+By continent the cheapest method is a GDMA variant in North America and Africa; in Europe and Oceania the neural gate is nominally cheapest (0.896 and 0.964, against 0.897 for fair soft GDMA in Europe and 0.972 for GDMA in Oceania), and in Asia pooled weights are cheapest (0.929 against 0.963--0.965), because most Asian areas have a single year or less of data.
 
 Three comparisons stand out.
-First, decision-focused combination again dominates forecast-then-commit: combining the same forecasts for accuracy and adding a quantile margin saves only 9--10\% worldwide and \emph{raises} cost in Asia by 10--12\%, where short histories make the estimated margins of the combined forecasts unreliable.
-Second, the neural gate is clearly worse than the simple decision-focused rules (0.909 against 0.813 worldwide) despite its flexibility; it is competitive only in Oceania.
-Its weights are learned from a year of past weeks and transfer poorly to weeks in which the relative performance of the candidates has shifted, whereas GDMA re-estimates a few interpretable rules every week.
-We did not tune the network extensively, so the comparison should be read as evidence that flexibility is not what this problem needs, not as a statement about the best achievable neural design.
+First, decision-focused combination on the simplex dominates forecast-then-commit and the unconstrained quantile-regression combination: combining the same forecasts for accuracy and adding a quantile margin saves only 1--3\% worldwide, and the quantile-regression combination is more expensive than the reference forecaster (1.016) because, with eleven highly collinear candidates and a few weeks of data, freeing the weights from the simplex costs more in variance than it gains in flexibility; both are particularly poor in Asia, where histories are short.
+Second, a neural gate trained with early stopping and averaged over two initialisations is clearly worse than the simple decision-focused rules (0.956 against 0.884 worldwide), although it is competitive in Europe and Oceania.
+We did not search over architectures, so this should be read as evidence that flexibility alone does not solve the problem, not as a statement about the best achievable neural design.
 Third, better candidates and better combination are complements.
-On their own the temperature model costs 0.943 of the single best forecaster, the multi-variable model 0.938 and its ensemble-margin version 0.956, the wider margins costing money on ordinary days.
-Adding the temperature model to the candidate set lowers the cost of soft GDMA from 0.828 to 0.820, and adding the two multi-variable candidates lowers it further to 0.813 (Table~\ref{tab:specs}); combining remains 13\% cheaper than the best weather model on its own.
-The multi-variable forecasts capture almost all of the value of a perfect temperature forecast: with realised temperatures in place of GFS forecasts in the temperature model, soft GDMA costs 0.812.
+On their own the temperature model costs 0.965 of the reference forecaster, the multi-variable model 0.960 and its ensemble-margin version 0.981, the wider margins costing money on ordinary days; the global LightGBM model costs 0.988 and the zero-shot foundation model 1.434, which is much worse than with a one-day-ahead information set because it must now forecast two days ahead.
+Adding the temperature model to the candidate set lowers the cost of soft GDMA from 0.906 to 0.892, and adding the two multi-variable candidates lowers it further to 0.884 (Table~\ref{tab:specs}); with realised temperatures in place of GFS forecasts in the temperature model, soft GDMA costs 0.876.
 The ranking of the methods is the same for every candidate set, so better weather information helps all methods alike.
-The ranking is stable across windows and critical ratios (Tables~\ref{tab:globalwindows} and~\ref{tab:globaltau} in the appendix).
+The ranking is also similar across estimation windows and critical ratios (Tables~\ref{tab:globalwindows} and~\ref{tab:globaltau} in the appendix).
 
 \begin{table}[t]
 \centering
-\caption{World commitment cost relative to the single best forecaster for four candidate sets ($W=28$): eight candidates without weather; nine with the temperature model fed archived GFS day-ahead forecasts; eleven with, in addition, the multi-variable model and its ensemble-margin version (main specification); and nine with the temperature model fed realised temperatures (upper bound on temperature information).}\label{tab:specs}
+\caption{World commitment cost relative to the reference forecaster for four candidate sets ($W=28$): eight candidates without weather; nine with the temperature model fed archived GFS day-ahead forecasts; eleven with, in addition, the multi-variable model and its ensemble-margin version (main specification); and nine with the temperature model fed realised temperatures (upper bound on temperature information).}\label{tab:specs}
 \footnotesize
 \input{tables/global_specs.tex}
 \end{table}
 
-\paragraph{Winter Storm Elliott.}
-The U.S.\ analysis (Table~\ref{tab:events}) showed that the operators' own forecasts beat every combination during the abrupt cold snap of December 2022.
+\paragraph{Extreme events.}
+The U.S.\ analysis (Table~\ref{tab:events}) showed that during Winter Storm Elliott, the abrupt cold snap of 21--26 December 2022 \citep{FERCNERC2023}, the operators' own forecasts were better than every combination.
 Table~\ref{tab:elliott} shows how much of that gap is a matter of weather information.
-Temperature forecasts alone help little: over the six days soft GDMA's excess cost over the official forecasts falls from 7.7\% without weather to 6.9\% with the temperature model, and to 5.3\% even with realised temperatures.
-The multi-variable candidates cut it to 3.1\%, and soft GDMA becomes the cheapest combination rule during the storm, although still not cheaper than the operators.
-The ensemble margin is the reason.
-On its own, the multi-variable model with an ensemble margin is 8\% \emph{cheaper} than the operators' forecasts during Elliott, whereas the same model with a fixed margin is 11\% more expensive. The spread rose sharply on 23 December, the costliest day of the storm, when it scaled the margin up by a median factor of 1.4 across balancing authorities (by more than 1.5 in 43\% of them) and cut that day's cost below the operators'; after the storm it fell below its recent average and narrowed the margins again.
-The combination rules only partly exploit this, because their weights are learned from the previous 28 days, in which the ensemble-margin candidate was a slightly expensive rule; over the whole period it is the most expensive of the three weather candidates.
-Letting the weights, not only the margin, respond to the ensemble spread is a natural next step.
+Without weather candidates soft GDMA is 20.0\% more expensive than the official forecasts over the six days; temperature forecasts from GFS reduce this to 14.7\%, and the multi-variable candidates, which add humidity, wind, radiation and the ensemble spread, to 9.5\%.
+With realised temperatures in the temperature model the figure is 11.1\%, so the multi-variable set is not better than a perfect temperature forecast in any structural sense: the six days are too few to rank candidate sets reliably, and rankings among the combination rules also change with the set.
+Excluding the BA-days on which TVA and Duke shed load \citep{FERCNERC2023}, which understate true demand, soft GDMA is 8.4\% more expensive.
+The only rule that beats the operators during the storm is a single candidate: the multi-variable model with the ensemble margin, which is 7\% cheaper (0.929), because the GEFS spread rose on 23 December, the costliest day, and widened the margin that day by a median factor of 1.4.
+The rule was designed after the gap in Elliott was known, precisely to address it, so this result is exploratory: it is a single candidate, evaluated on the single event that motivated it; over the whole period it is the most expensive of the three weather candidates (0.981), and the combination rules, whose weights are learned from the previous four weeks, do not give it enough weight to exploit it.
+During Winter Storm Uri, soft GDMA is 11--13\% cheaper than the operators in every candidate set, and 11--13\% cheaper also when ERCOT's, SPP's and MISO's load-shed days are excluded.
 
 \begin{table}[t]
 \centering
-\caption{Winter Storm Elliott (22--27 December 2022, 46 U.S.\ balancing authorities): commitment cost relative to the operators' official day-ahead forecasts, by candidate set ($W=28$).}\label{tab:elliott}
+\caption{Winter Storm Elliott (21--26 December 2022, 46 U.S.\ balancing authorities): commitment cost relative to the operators' official day-ahead forecasts, by candidate set ($W=28$), and in the main set without the BA-days on which load was shed.}\label{tab:elliott}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \input{tables/global_elliott.tex}
 \end{table}
 
-\paragraph{New and data-poor systems.}
-Fifty-two areas enter the panel after the start of the evaluation: the 46 U.S.\ balancing authorities in January 2019, the five Thai regions in January 2023 and one European system.
-During their first eight weeks each of them has only a few weeks of history (Table~\ref{tab:entry}).
-Pooled weights, which impose the rule learned from other systems, are 23\% more expensive than the single best forecaster in this phase, and the neural gate, whose features are not yet informative, is 67\% more expensive.
-Fair soft GDMA (0.959) and two-step clustering (0.967) are the cheapest methods for entering areas, followed by per-area weights (0.991): a new system borrows the rule of the segment it resembles after a few weeks, which is the mechanism behind the $\log G/T$ term of Theorem~\ref{thm:oracle}.
-Soft GDMA (1.016) and plain GDMA (1.042), whose segment rules are estimated on total cost and are therefore shaped by the large established systems, are slightly more expensive than the single best forecaster in this phase; the fair variant, which gives a small new system the same say as a large one, avoids this.
+A single storm is a weak basis for conclusions about extremes, so we also examine all extreme-temperature days by a rule fixed beforehand: the area-days on which the daily mean temperature is below its 2.5\% or above its 97.5\% quantile over the evaluation period (Table~\ref{tab:extremes}).
+On cold days soft GDMA is 12\% cheaper than the reference forecaster worldwide (90\% interval 0.83--0.93, block bootstrap over days) and on hot days 19\% cheaper (0.79--0.84); in the United States 10\% and 25\% cheaper.
+Elliott is therefore not typical of extreme weather in general; it is an abrupt cold snap accompanied by large forced outages, and the loss of the combination rules in that event reflects weights that cannot anticipate a regime change.
 
 \begin{table}[t]
 \centering
-\caption{Commitment cost of areas entering the panel, relative to the single best forecaster ($W=28$, eleven candidates).}\label{tab:entry}
+\caption{Commitment cost relative to the reference forecaster on extreme-temperature area-days ($W=28$): days on which an area's daily mean temperature is below its 2.5\% or above its 97.5\% quantile. Intervals: moving-block bootstrap over days (7-day blocks, 1,000 replications).}\label{tab:extremes}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\input{tables/global_extremes.tex}
+\par\smallskip\footnotesize $^a$ As in Table~\ref{tab:global}.
+\end{table}
+
+\paragraph{Tail risk.}
+The linear cost model hides the tail, so Table~\ref{tab:tail} reports the average of the costliest 5\% of days (CVaR$_{95}$) and the costliest week of the world's daily commitment cost.
+Soft GDMA's costliest week is 16\% cheaper than the reference forecaster's (0.840) and its CVaR$_{95}$ is 9.5\% lower (0.905), so its saving is not bought with a heavier tail.
+The forecast-then-commit and quantile-regression rules fail in the tail: their CVaR$_{95}$ is 55--63\% higher than the reference forecaster's and their costliest week is nine times as costly, mostly in the first week of January 2019, when the 46 U.S.\ balancing authorities enter the panel with a few days of data; even without each area's first eight weeks their costliest week is more than twice the reference's.
+Rules that estimate weights on the simplex, with a shared structure across areas, do not fail in this way.
+
+\begin{table}[t]
+\centering
+\caption{Tail risk of the world's daily commitment cost relative to the reference forecaster ($W=28$): total, average of the costliest 5\% of days (CVaR$_{95}$) and costliest week, for the calibrated critical ratios, without each area's first eight weeks, and with a scarcity-level critical ratio of 0.99 for every area.}\label{tab:tail}
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\input{tables/global_tail.tex}
+\end{table}
+
+\paragraph{New and data-poor systems.}
+Fifty-two areas enter the panel after the start of the evaluation: the 46 U.S.\ balancing authorities in January 2019, the five Thai regions in January 2023 and one European system.
+During their first eight weeks each of them has only a few weeks of history (Table~\ref{tab:entry}).
+No combination does well in this phase: all of them except the quantile-regression combination (0.976) are more expensive than the reference forecaster during the first eight weeks.
+Pooled weights, which impose the rule learned from other systems, are 61\% more expensive, forecast-then-commit 39--40\% more expensive, and the neural gate, whose features are not yet informative, 2.6 times as expensive.
+Plain GDMA (1.053) and fair soft GDMA (1.058) are the closest to the reference among the rules that share structure across areas, followed by soft GDMA and the best single candidate (1.069, each); per-area weights, which rely on the area's own few days, and shrinkage are 11\% more expensive.
+Two-step clustering (1.170) does less well for entering areas than for the established ones, because it clusters weights that are themselves estimated from a handful of days.
+The quantile-regression combination is better than the reference for entering areas but worse for established ones (1.016); we have no explanation for this reversal and the entry sample is small.
+In the U.S.\ part of the sample, where an official forecast exists, an operator adopting any of these rules would do well to keep committing on it for the first weeks of a new unit.
+
+\begin{table}[t]
+\centering
+\caption{Commitment cost of areas entering the panel, relative to the reference forecaster ($W=28$, eleven candidates).}\label{tab:entry}
 \footnotesize
 \input{tables/global_entry.tex}
 \par\smallskip\footnotesize $^b$ The first eight weeks after an area has at least one day of data in the estimation window.
 \end{table}
 
 \paragraph{Segments across continents.}
-GDMA uses more than one segment in 73\% of the weekly re-estimations (two segments in 37\%, three in 21\%), much more often than in the U.S.\ panel, and soft GDMA shrinks towards the segment rule with an average intensity of $\kappa=0.68$.
+GDMA uses more than one segment in 89\% of the weekly re-estimations (two segments in 20\%, three in 22\%, four in 21\%), much more often than in the U.S.\ panel, and soft GDMA shrinks towards the segment rule with an average intensity of $\kappa=0.39$.
 Segments are not continents.
-Among weeks with several segments, two European systems share a segment 67\% of the time and two U.S.\ balancing authorities 52\% of the time, but European, Oceanian and African systems are grouped together 64--69\% of the time, and North American areas are grouped with European ones only 27\% of the time.
+Among weeks with several segments, two systems on the same continent share a segment only 37--49\% of the time (North America 46\%, Europe 49\%, Oceania 42\%, Asia 37\%), European and African systems are grouped together 52\% of the time, and North American areas are grouped with European or Asian ones only 19--21\% of the time.
 The segmentation therefore does not follow geography; it is consistent with differences in which forecasting systems work---notably whether an operator's own forecast is available and informative---which a planner could not have specified in advance.
 
 \subsection{Who benefits? A fairness audit}\label{sec:fairaudit}
 
 \begin{table}[t]
 \centering
-\caption{Distribution of the benefits across the 125 grid areas ($W=28$, eleven candidates): percentiles of each area's cost relative to its own single best forecaster, share of areas made worse off, median ratio in the worst-served continent, and cost ratios for data-rich and data-poor areas.}\label{tab:fairness}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
+\caption{Distribution of the benefits across the 125 grid areas ($W=28$, eleven candidates): percentiles of each area's cost relative to the reference forecaster, share of areas made worse off than under the reference and than under their own best single candidate, median ratio in the worst-served continent, and cost ratios for data-rich and data-poor areas.}\label{tab:fairness}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \input{tables/global_fairness.tex}
 \par\smallskip\footnotesize $^d$ Highest continent-level median of the per-area ratios. $^e$ Areas with less than two years of evaluation data (the 31 Chinese provinces and Algeria).
 \end{table}
 
-Table~\ref{tab:fairness} asks how the gains are distributed.
-Methods that impose a common rule or learn a flexible global map spread their gains unevenly: pooled weights make 13\% of the areas worse off than their own single best forecaster, and the neural gate and the forecast-then-commit methods 26--32\%; for the neural gate the median area in the worst-served continent loses 4.1\%.
-Soft GDMA makes only 4\% of areas worse off and its worst-served continent is within 0.2 points of the best among the efficiency-oriented methods, and fair soft GDMA improves on every count (2\% harmed, the tightest distribution with a 90th percentile of 0.956, and a worst-served continent at 0.871).
-A gap remains between data-rich and data-poor systems: data-poor areas save 14\% under the GDMA variants against 18--19\% for data-rich ones, and per-area weights, which have little data to work with for these systems, save only 10\%.
+Table~\ref{tab:fairness} asks how the gains are distributed, relative to the reference forecaster and relative to each area's own best single candidate.
+Against the reference forecaster the picture is mixed: even the best rules make 17--21\% of the areas worse off, because the reference is often a strong forecast (the operator's own, or a model forecast that is also one of the candidates), and rules that impose a common rule or learn a flexible global map do worse: the neural gate makes 34\% of the areas worse off, forecast-then-commit 41--45\% and the quantile-regression combination 58\%.
+Against each area's own best single candidate the groups separate more clearly: soft GDMA makes only 6\% of the areas worse off and its fair variant 3\%, whereas pooled weights make 24\% worse off, per-area weights and two-step clustering 14\%, the neural gate 42\%, forecast-then-commit 52--60\% and the quantile-regression combination 86\%.
+The median area in the worst-served continent is 2.2--2.8\% better off than under the reference under the GDMA variants and the clustering rules, and worse off under the neural gate (1.010), forecast-then-commit (1.047--1.053) and the quantile-regression combination (1.127).
+A large gap remains between data-rich and data-poor systems: areas with at least two years of data save 12\% under soft GDMA, areas with less than two years (the Chinese provinces and Algeria) only 4\%, and per-area weights save almost nothing for the latter (0.983); only pooled weights, which impose the rule of other systems, do nearly as well for data-poor as for data-rich areas (0.922 against 0.901), at a higher cost for the rich ones.
 
-Strikingly, fairness costs nothing here.
-Fair soft GDMA, which counts every area's relative improvement equally, is also the cheapest method in total (0.810 against 0.813, significant at the 5\% level).
-Weighting by relative cost prevents the few largest systems from dictating the segment rules, and the rules that serve the many smaller systems well turn out to generalise better out of sample---consistent with the segment-structure argument of Section~\ref{sec:theory}, under which fair and efficient criteria share their minimiser.
+Fair soft GDMA, which counts every area's relative improvement equally, is also the cheapest method in total (0.881 against 0.884, significant at the 1\% level), although within the model confidence set and economically negligible.
+So in this panel fairness in the sense of the criterion costs essentially nothing in total cost, and shifts the distribution: the share of areas worse off than their own best candidate halves (6\% to 3\%), the 10th percentile of the ratio falls to 0.840 and its 90th to 1.022.
+Weighting by relative cost prevents the few largest systems from dictating the segment rules, which is consistent with the segment-structure argument of Section~\ref{sec:theory}, under which fair and efficient criteria share their minimiser; we cannot tell from these data whether segments are exact.
 
 \paragraph{Income.}
 Fairness at this scale is also a question of income.
@@ -168,15 +198,16 @@ Table~\ref{tab:income} reports the results.
 
 \begin{table}[t]
 \centering
-\caption{Benefits by income ($W=28$): commitment cost relative to the single best forecaster by World Bank income group and, within the United States, for the balancing authorities in the lowest and highest third of state per-capita income; Spearman rank correlations between an area's cost ratio and income.}\label{tab:income}
+\caption{Benefits by income ($W=28$): commitment cost relative to the reference forecaster by World Bank income group and, within the United States, for the balancing authorities in the lowest and highest third of state per-capita income; Spearman rank correlations between an area's cost ratio and income.}\label{tab:income}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \input{tables/global_income.tex}
 \par\smallskip\footnotesize $^g$ A negative correlation means that richer areas have lower cost ratios, i.e.\ gain more.
 \end{table}
 
-Across the world, areas in upper-middle-income countries save less than areas in high-income countries under every decision-focused method (soft GDMA 14.1\% against 19.0\%), but this gap largely coincides with the data gap above, because the upper-middle-income group is dominated by the Chinese provinces with a single year of data.
-Across individual areas, the rank correlation between an area's cost ratio and its GDP per capita is close to zero for the GDMA variants ($-0.04$ to $-0.09$) and for pooled weights, and is most negative---richer areas gaining more---for the neural gate ($-0.25$) and per-area weights ($-0.21$).
-Within the United States the picture is similar.
-In cost-weighted terms the balancing authorities in the highest third of state income gain more (cost ratios of 0.64--0.66 under the GDMA variants against 0.88--0.90 in the lowest third), but this reflects a few large, high-income systems whose own official forecasts happen to be weak; across balancing authorities the rank correlation with state income is again close to zero ($-0.06$ to $-0.07$).
-We find no evidence that GDMA systematically favours richer systems, and its fair variant slightly narrows every income gap in the table.
+Across the world, areas in upper-middle-income countries save less than areas in high-income countries under every decision-focused simplex method (soft GDMA 4.9\% against 12.2\%), but this gap largely coincides with the data gap above, because the upper-middle-income group is dominated by the Chinese provinces with a single year of data.
+Across individual areas, the rank correlation between an area's cost ratio and its GDP per capita is $-0.12$ for soft GDMA (90\% bootstrap interval $-0.26$ to $0.03$) and $-0.11$ for its fair variant, so richer areas gain slightly more but the interval includes zero; it is positive and significant for pooled weights ($0.19$, interval $0.04$ to $0.34$), which favour poorer areas, and not different from zero for the neural gate.
+Among the 88 areas with at least two years of data it is positive for each of the methods we checked ($0.17$ for soft GDMA, $0.18$ for its fair variant, $0.23$ for pooled weights and $0.39$ for the neural gate), that is, richer areas gain \emph{less}.
+The sign is therefore not stable across subsamples, as one would expect if income itself plays no role and the correlation reflects data length and continent, with which income is confounded.
+Within the United States, in cost-weighted terms the balancing authorities in the highest third of state income gain more (cost ratios of 0.68 under soft GDMA against 0.93 in the lowest third), but this reflects a few large, high-income systems whose own official forecasts happen to be weak; across balancing authorities the rank correlation with state income is $0.03$ (90\% interval $-0.24$ to $0.31$).
+We therefore find no evidence that GDMA systematically favours richer or poorer systems, but with 125 areas, income measured at the level of countries and states, and strong confounding with data length, the data cannot rule out moderate gradients either.
