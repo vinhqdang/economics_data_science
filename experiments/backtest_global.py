@@ -262,12 +262,17 @@ def main():
     # scored only where demand and every candidate commitment exist
     valid = np.isfinite(yy) & np.isfinite(P[:, :, ev, :]).all(axis=0)
     yz = np.where(valid, yy, 0.0)
-    cost = np.where(valid[None], newsvendor_cost(yz[None], np.nan_to_num(orders[:, :, ev, :]),
-                                                  u[None, :, None, None], o[None, :, None, None]), 0.0)
-    short = np.where(valid[None], orders[:, :, ev, :] < yz[None], False)
+    # one method at a time: the full (methods, areas, days, hours) arrays are too large to hold at once
+    daily_cost = np.empty((K, N, len(ev)))
+    short_hours = np.empty((K, N, len(ev)), dtype=np.int32)
+    for k in range(K):
+        ok_ = orders[k][:, ev, :]
+        c_ = np.where(valid, newsvendor_cost(yz, np.nan_to_num(ok_), u[:, None, None], o[:, None, None]), 0.0)
+        daily_cost[k] = c_.sum(axis=2)
+        short_hours[k] = np.where(valid, ok_ < yz, False).sum(axis=2)
     keep = [METHOD_NAMES.index(m) for m in SAVE_ORDERS]
     np.savez_compressed(os.path.join(ROOT, "results", f"backtest_{tag}.npz"),
-                        daily_cost=cost.sum(axis=3), short_hours=short.sum(axis=3),
+                        daily_cost=daily_cost, short_hours=short_hours,
                         valid_hours=valid.sum(axis=2), methods=np.array(METHOD_NAMES),
                         eval_days=ev, tau=tau, u=u, o=o, scale=scale_full, code=d["code"],
                         continent=d["continent"], G=np.array(hist["G"]),
@@ -279,7 +284,7 @@ def main():
                         candidates=np.array(cand))
     np.savez_compressed(os.path.join(ROOT, "results", f"orders_{tag}.npz"),
                         orders=orders[keep][:, :, ev, :], methods=np.array(SAVE_ORDERS), eval_days=ev)
-    tot = cost.sum(axis=(1, 2, 3))
+    tot = daily_cost.sum(axis=(1, 2))
     for k, name in enumerate(METHOD_NAMES):
         print(f"[{tag}] {name:12s} total cost / Official = {tot[k] / tot[0]:.4f}")
 
