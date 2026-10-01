@@ -239,3 +239,4 @@ results/gfs_queue_status.txt
 # pipeline progress markers (run state)
 results/pipeline/
 paper/*.spl
+paper/submission/
