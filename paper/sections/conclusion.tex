@@ -1,6 +1,6 @@
 \section{Managerial implications and conclusion}\label{sec:conclusion}
 
-\paragraph{Implications for system operators and planners.}
+\paragraph{Implications for system operators and planners}
 Five lessons emerge for organisations that coordinate many operating units, from grid operators and regulators to international bodies that fund energy-transition programmes.
 First, the object to be learned is the \emph{decision rule}, not the forecast: the cost-minimising combination of forecasting systems depends on the cost asymmetry each unit faces, and combining for accuracy and adding a margin leaves 2--3 points of the saving on the table in the United States and 8--10 points worldwide, with occasional extreme weeks.
 Second, planners need not choose between one rule for every system and a bespoke rule for each.
@@ -12,14 +12,14 @@ Fifth, forecasting and investment are linked.
 In a stylised model that credits storage only with the commitment errors it absorbs, a better commitment rule reduces what storage can add---the reference rule needs 34\,GW of optimally sited batteries to match the cost that soft GDMA achieves without any---and a storage programme sited on today's error profile loses 2--4\% of its value; planners should treat both as an interaction to be studied with the other value streams of storage, not as a siting recommendation.
 Because GDMA only re-weights forecasts that operators already produce, it can be adopted without replacing existing forecasting systems.
 
-\paragraph{Who would adopt it.}
+\paragraph{Who would adopt it}
 The grouping needs someone who sees many units at once.
 Natural adopters are organisations that already coordinate several operators---a regional transmission organisation computing rules for its member balancing authorities, the regional coordination centres of European transmission system operators, the market operator of a multi-region market such as AEMO---and forecasting-service providers or regulators that work with many utilities.
 The data requirement is each unit's candidate commitments and realised demand over the estimation window, which such coordinators typically hold already; units that cannot share them could keep their data and exchange only the gradients of their own cost with respect to the shared weights, as in federated learning.
 The rules are auditable because each unit's commitment remains a convex combination of commitments it already understands, and the segment memberships can be discussed with the operators concerned.
 Operators remain responsible for reliability; GDMA is a way to set the day-ahead commitment that feeds their existing processes, not a replacement for reserve procurement or unit commitment.
 
-\paragraph{Limitations and extensions.}
+\paragraph{Limitations and extensions}
 Our coverage of Africa and parts of Asia is thin, because public hourly demand data for South Africa, India, Japan and South Korea could not be retrieved in our computing environment, and the Chinese provinces are observed in a single year; the audit shows that such data-poor systems benefit much less than data-rich ones, and extending the panel is a priority. The fairness analysis measures income at the level of countries and U.S.\ states; the distribution of benefits across the households served within an area would require data we do not have.
 Outside the United States the reference forecaster is a model forecast, because the official day-ahead forecasts of European transmission system operators and of AEMO were not part of the data we could retrieve; savings against operator practice in those systems remain to be established. Even in the United States the reference is a stylised policy, the official forecast plus a rolling quantile margin, not what operators do when they clear markets and procure reserves.
 The cost calibration is stylised: shortfall costs are tied to a proxy based on the variability of interchange, which is not transfer capability, rather than to market prices or the value of lost load, and the single-period newsvendor abstracts from ramping, network constraints, multi-day commitments and from the fact that demand served in a load-shedding event understates true demand.
@@ -27,7 +27,7 @@ The weather candidates use archived GFS and GEFS forecasts at 0.5--1 degree reso
 The storage stage takes the commitment rule as given and credits batteries only with the commitment errors they absorb; jointly optimising commitments and battery dispatch, and adding the arbitrage, adequacy and renewable-integration value of storage, would make the siting problem much richer, and could change where storage should go.
 The theory treats the number of segments as given and relies on a high-level concentration condition; a formal analysis of the hold-out choice of $G$ and $\kappa$, and of strong cross-sectional dependence through common weather shocks, is left for future work.
 
-\paragraph{Conclusion.}
+\paragraph{Conclusion}
 Grouped decision-focused model averaging combines three ideas that have so far developed separately---optimal model averaging, decision-focused learning and latent group structures---into one estimator, with guarantees for the idealised version, and links it to a stylised siting problem for new capacity.
 With only the information available at the day-ahead gate closure, it turns the forecasts operators already have into commitment rules that are 12\% cheaper worldwide, and 13--17\% cheaper in the United States, than committing on a reference forecaster; the gain comes mostly from deciding for the decision and from sharing structure across units, with grouping a smaller refinement.
 The limits are as informative as the gains: no rule beats the operators during an abrupt storm, entering units are poorly served by every rule, and the value of better commitment for storage planning depends on value streams that we do not model.

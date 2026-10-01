@@ -100,7 +100,7 @@ The ranking is also similar across estimation windows and critical ratios (Table
 \input{tables/global_specs.tex}
 \end{table}
 
-\paragraph{Extreme events.}
+\paragraph{Extreme events}
 The U.S.\ analysis (Table~\ref{tab:events}) showed that during Winter Storm Elliott, the abrupt cold snap of 21--26 December 2022 \citep{FERCNERC2023}, the operators' own forecasts were better than every combination.
 Table~\ref{tab:elliott} shows how much of that gap is a matter of weather information.
 Without weather candidates soft GDMA is 20.0\% more expensive than the official forecasts over the six days; temperature forecasts from GFS reduce this to 14.7\%, and the multi-variable candidates, which add humidity, wind, radiation and the ensemble spread, to 9.5\%.
@@ -131,7 +131,7 @@ Elliott is therefore not typical of extreme weather in general; it is an abrupt 
 \par\smallskip\footnotesize $^a$ As in Table~\ref{tab:global}.
 \end{table}
 
-\paragraph{Tail risk.}
+\paragraph{Tail risk}
 The linear cost model hides the tail, so Table~\ref{tab:tail} reports the average of the costliest 5\% of days (CVaR$_{95}$) and the costliest week of the world's daily commitment cost.
 Soft GDMA's costliest week is 16\% cheaper than the reference forecaster's (0.840) and its CVaR$_{95}$ is 9.5\% lower (0.905), so its saving is not bought with a heavier tail.
 The forecast-then-commit and quantile-regression rules fail in the tail: their CVaR$_{95}$ is 55--63\% higher than the reference forecaster's and their costliest week is nine times as costly, mostly in the first week of January 2019, when the 46 U.S.\ balancing authorities enter the panel with a few days of data; even without each area's first eight weeks their costliest week is more than twice the reference's.
@@ -145,7 +145,7 @@ Rules that estimate weights on the simplex, with a shared structure across areas
 \input{tables/global_tail.tex}
 \end{table}
 
-\paragraph{New and data-poor systems.}
+\paragraph{New and data-poor systems}
 Fifty-two areas enter the panel after the start of the evaluation: the 46 U.S.\ balancing authorities in January 2019, the five Thai regions in January 2023 and one European system.
 During their first eight weeks each of them has only a few weeks of history (Table~\ref{tab:entry}).
 No combination does well in this phase: all of them except the quantile-regression combination (0.976) are more expensive than the reference forecaster during the first eight weeks.
@@ -163,7 +163,7 @@ In the U.S.\ part of the sample, where an official forecast exists, an operator 
 \par\smallskip\footnotesize $^b$ The first eight weeks after an area has at least one day of data in the estimation window.
 \end{table}
 
-\paragraph{Segments across continents.}
+\paragraph{Segments across continents}
 GDMA uses more than one segment in 89\% of the weekly re-estimations (two segments in 20\%, three in 22\%, four in 21\%), much more often than in the U.S.\ panel, and soft GDMA shrinks towards the segment rule with an average intensity of $\kappa=0.39$.
 Segments are not continents.
 Among weeks with several segments, two systems on the same continent share a segment only 37--49\% of the time (North America 46\%, Europe 49\%, Oceania 42\%, Asia 37\%), European and African systems are grouped together 52\% of the time, and North American areas are grouped with European or Asian ones only 19--21\% of the time.
@@ -190,7 +190,7 @@ Fair soft GDMA, which counts every area's relative improvement equally, is also 
 So in this panel fairness in the sense of the criterion costs essentially nothing in total cost, and shifts the distribution: the share of areas worse off than their own best candidate halves (6\% to 3\%), the 10th percentile of the ratio falls to 0.840 and its 90th to 1.022.
 Weighting by relative cost prevents the few largest systems from dictating the segment rules, which is consistent with the segment-structure argument of Section~\ref{sec:theory}, under which fair and efficient criteria share their minimiser; we cannot tell from these data whether segments are exact.
 
-\paragraph{Income.}
+\paragraph{Income}
 Fairness at this scale is also a question of income.
 We attach to every grid area the GDP per capita at purchasing-power parity of its country and its World Bank income group \citep{WorldBankWDI}, with Taiwan from the IMF World Economic Outlook \citep{IMFWEO}; 83 areas are in high-income and 42 in upper-middle-income countries.
 For the U.S.\ balancing authorities we also compute the per-capita personal income of the states they serve \citep{BEApcpi}, weighted by approximate service-territory shares.

@@ -94,7 +94,7 @@ Part~(iii) is an exact equivalence, not an asymptotic approximation: on the even
 Any distributional result available for the known-segment estimator therefore transfers to GDMA without modification.
 The recovery condition $\log N/T_e\to0$ is mild: the number of units may grow polynomially in the window length.
 
-\paragraph{Soft GDMA.}
+\paragraph{Soft GDMA}
 For fixed $(G,\kappa)$, $R_i$ is convex in $\bm w$, so the risk of~\eqref{eq:soft} satisfies
 $R_i(\widehat{\bm w}^{\,\mathrm{soft}}_i)\le(1-\kappa)R_i(\widehat{\bm w}_i)+\kappa R_i(\widehat{\bm w}_{\widehat\gamma_i})$.
 Averaging over units, the excess risk of soft GDMA is at most the $\kappa$-weighted average of the excess risks of unit-specific weights and of GDMA, each controlled by Theorem~\ref{thm:oracle}.
@@ -103,7 +103,7 @@ These statements hold for fixed $(G,\kappa)$.
 We do not analyse the data-dependent choice of $(G,\kappa)$ on the hold-out, nor why soft GDMA with an estimated $\kappa$ can outperform both of its limits; a formal treatment of the hold-out rule under serial and cross-sectional dependence is left for future work.
 
 
-\paragraph{Weighted and fair criteria.}
+\paragraph{Weighted and fair criteria}
 All results of this section hold for criteria in which unit $i$'s costs are multiplied by a weight $\omega_i\in[\underline\omega,\bar\omega]$ with $0<\underline\omega\le\bar\omega<\infty$: the weights only rescale $u_i$ and $o_i$, so Assumptions~\ref{as:bounded}--\ref{as:groups} hold with $\bar a$ replaced by $\bar\omega\bar a$ and $\lambda$ by $\underline\omega\lambda$.
 Fair soft GDMA uses data-dependent weights $\omega_i\propto1/c_i^0$; treating them as fixed within a window, Theorem~\ref{thm:oracle} bounds its weighted excess risk.
 Under the segment structure of Corollary~\ref{cor:ao}, the weighted and unweighted criteria have the same minimiser, because every unit attains its own optimal weights, and since each unit's excess risk is non-negative the unweighted excess risk is at most $1/\underline\omega$ times the weighted one (weights normalised to mean one).

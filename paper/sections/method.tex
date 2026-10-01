@@ -27,13 +27,13 @@ The simplex constraint keeps the combined commitment inside the range spanned by
 Let the estimation window contain periods $t=1,\dots,T$ for which both candidate commitments and realised demand are observed (a forward-validation sample in the terminology of \citealp{ZhangZhang2023}).
 Write $\widehat R_i(\bm w)=T^{-1}\sum_{t=1}^T C_i(\bm q_{it}^\top\bm w,y_{it})$ for the empirical cost of unit $i$.
 
-\paragraph{Unit-specific weights.} $\widehat{\bm w}_i=\arg\min_{\bm w\in\Delta_M}\widehat R_i(\bm w)$.
+\paragraph{Unit-specific weights} $\widehat{\bm w}_i=\arg\min_{\bm w\in\Delta_M}\widehat R_i(\bm w)$.
 This respects heterogeneity but estimates $M-1$ free parameters from $T$ serially dependent observations per unit; it is the decision-focused counterpart of per-series forecast combination, and suffers from the same estimation noise that underlies the forecast-combination puzzle \citep{SmithWallis2009,Claeskens2016}.
 
-\paragraph{Pooled weights.} $\widehat{\bm w}=\arg\min_{\bm w}\sum_i\widehat R_i(\bm w)$.
+\paragraph{Pooled weights} $\widehat{\bm w}=\arg\min_{\bm w}\sum_i\widehat R_i(\bm w)$.
 This uses all $NT$ observations but forces a single policy on units that may need different ones.
 
-\paragraph{Grouped weights (proposed).}
+\paragraph{Grouped weights (proposed)}
 We posit that units fall into a small number $G$ of latent segments whose members are well served by the same combination.
 The GDMA estimator solves
 \begin{equation}\label{eq:gdma}
@@ -132,17 +132,17 @@ The same holds for storage: problem~\eqref{eq:siting} places batteries where the
 Energy-justice scholarship stresses that the distribution of the benefits of energy infrastructure matters in its own right \citep{SovacoolDworkin2015}, and the operations literature measures the efficiency cost of fair allocations by the \emph{price of fairness} \citep{Bertsimas2011pof}.
 We therefore add two fair variants and audit every method for how its benefits are distributed.
 
-\paragraph{Fair soft GDMA (one area, one vote).}
+\paragraph{Fair soft GDMA (one area, one vote)}
 Let $c^0_i$ be the in-window cost of unit $i$ under the reference forecaster (candidate~1, the official forecast where one exists).
 Fair soft GDMA solves the soft GDMA problem with every unit's costs divided by $c^0_i$ (normalised to mean one), that is, with $u_i$ and $o_i$ replaced by $\omega_iu_i$ and $\omega_io_i$, $\omega_i\propto1/c^0_i$.
 Each unit then counts in proportion to its \emph{relative} improvement, so that a 10\% saving in a 70\,MW municipal utility weighs as much as a 10\% saving in a 90\,GW regional market.
 This is the relative-cost analogue of group-robust learning \citep{Sagawa2020gdro}; it changes only the weights of the criterion, not the algorithm.
 
-\paragraph{Fair storage siting.}
+\paragraph{Fair storage siting}
 We consider two fair versions of~\eqref{eq:siting} over continents $c$ (any grouping, such as countries or income groups, works the same way).
 \emph{Proportional floors} require every continent to receive at least a share $\lambda$ of its share of demand in the budget; the floors are filled greedily within each continent and the rest of the budget greedily across all units.
 \emph{Maximin siting} allocates each increment of battery power to the continent whose relative benefit---the value captured divided by its commitment cost without storage---is currently the lowest, and within it to the unit with the highest marginal value, which implements a max--min notion of fairness \citep{Bertsimas2011pof}.
 The price of fairness is the share of the efficient programme's value that each fair version gives up.
 
-\paragraph{Audit.}
+\paragraph{Audit}
 For every method we report the distribution across units of the ratio of its cost to the unit's cost under the reference forecaster, the share of units made worse off than under the reference forecaster and than under their own best single candidate (chosen on the estimation window), the median ratio of the worst-served continent, and separate ratios for data-rich and data-poor systems.
