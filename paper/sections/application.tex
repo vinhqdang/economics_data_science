@@ -8,7 +8,7 @@ We use the period 1 January 2019 to 26 September 2026 in UTC hours and exclude t
 Following \citet{Ruggles2020}, non-positive values and values outside $[0.3,3]$ times the median of the preceding seven days are treated as missing, and gaps of up to three hours are interpolated; the filter is one-sided, so it uses no future data, and the official forecast is filtered against its own history rather than against realised demand.
 We keep BAs with at least 97\% valid demand, at least 93\% valid official forecasts, mean demand above 50\,MW and a median absolute official forecast error below 15\% of median demand.
 Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators, and account for 97\% of lower-48 demand.
-Ten BAs are dropped, mostly small systems with long gaps or implausible official forecasts; 0.27\% of the retained BA-hours are missing.
+Ten BAs are dropped, mostly small systems with long gaps or implausible official forecasts; 0.32\% of the retained BA-hours are missing, and 0.6\% of the official forecasts are replaced by the mean of the other candidates.
 
 \subsection{Decision problem and cost calibration}
 
@@ -39,7 +39,7 @@ Each forecast $f^{(m)}$ becomes a candidate commitment by adding its own safety 
 q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\,\big\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\big\},
 \]
 where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_{i,t}\}$ of forecast $m$ for BA $i$ over the 28 days ending at $d-2$; the floor at 20\% of the BA's mean demand $\bar y_{i,t}$ over the week before the error's day $t$ prevents an occasional implausibly small forecast from producing an unbounded margin.
-The candidate rules are available from February 2020, so the evaluation period runs from 1 April 2020 to 26 September 2026: 2,342 days, 335 weekly re-estimations and 2.58 billion MWh of demand.
+The candidate rules are available from February 2020 and, with the 28-day margin window, the 56-day window cap and the two-day information lag, the evaluation period runs from 1 May 2020 to 26 September 2026: 2,340 days, 335 weekly re-estimations and 25.8 billion MWh of demand.
 
 \subsection{Competing methods}
 
@@ -61,7 +61,7 @@ All hold-out choices ($G$, $\kappa$ and the shrinkage intensity) use the same sp
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample system-wide commitment cost, 1 April 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:main}
+\caption{Out-of-sample system-wide commitment cost, 1 May 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$.}\label{tab:main}
 \footnotesize
 \input{tables/main.tex}
 \par\smallskip\footnotesize $^a$ Share of the 46 BAs whose own cost is lower than under the official-forecast policy ($W=28$).
