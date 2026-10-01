@@ -82,7 +82,7 @@ This is the bias--variance trade-off that motivates GDMA.
 
 \emph{Third, grouping helps, but the three grouped rules are statistically indistinguishable.}
 For $W\ge14$ the three cheapest methods are the grouped ones---two-step clustering, GDMA and soft GDMA---and at $W=28$ they form the 90\% model confidence set of \citet{Hansen2011mcs} (marked $\dagger$ in Table~\ref{tab:main}), which excludes shrinkage towards pooled weights (MCS $p$-value 0.03), per-BA and pooled weights and all other rules.
-The differences among the three are below 0.1\% at $W=28$ and $W=56$ and below 0.6\% at $W=14$; two-step clustering is marginally the cheapest of them, and with a one-week window pooled weights are cheapest overall (0.856, against 0.859--0.867 for the grouped rules).
+The differences among the three are below 0.2\% at $W=28$ and $W=56$ and about 0.5\% at $W=14$; two-step clustering is marginally the cheapest of them, and with a one-week window pooled weights are cheapest overall (0.856, against 0.859--0.867 for the grouped rules).
 Soft GDMA improves on the official forecast for the largest share of BAs (63\%, against 57--59\% for the other grouped rules and 54\% for shrinkage), and choosing $G$ by the one-standard-error rule rather than the plain hold-out minimum lowers the cost of GDMA for short windows (0.864 against 0.874 at $W=7$).
 The evidence therefore supports decision-focused combination with cross-sectional structure; which of the grouped variants a planner uses matters much less.
 
