@@ -136,6 +136,8 @@ The linear cost model hides the tail, so Table~\ref{tab:tail} reports the averag
 Soft GDMA's costliest week is 16\% cheaper than the reference forecaster's (0.840) and its CVaR$_{95}$ is 9.5\% lower (0.905), so its saving is not bought with a heavier tail.
 The forecast-then-commit and quantile-regression rules fail in the tail: their CVaR$_{95}$ is 55--63\% higher than the reference forecaster's and their costliest week is nine times as costly, mostly in the first week of January 2019, when the 46 U.S.\ balancing authorities enter the panel with a few days of data; even without each area's first eight weeks their costliest week is more than twice the reference's.
 Rules that estimate weights on the simplex, with a shared structure across areas, do not fail in this way.
+With a scarcity-level critical ratio of 0.99 for every area, soft GDMA's total cost is 11\% below the reference forecaster's, as before (0.888), its CVaR$_{95}$ is 8\% lower and its costliest week 10\% lower; forecast-then-commit and the quantile-regression combination become more expensive than the reference in total (1.18--1.53) and 14--15 times as costly in their costliest week.
+Equal weights, which give weight to naive rules that over-commit, have the lightest tail at this critical ratio (costliest week 0.66) at a higher total cost (1.071), a reminder that the ranking by total cost is not the ranking by tail risk.
 
 \begin{table}[t]
 \centering
