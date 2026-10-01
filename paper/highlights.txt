@@ -1,5 +1,0 @@
-Grouped model averaging learns forecast weights from commitment cost, not accuracy.
-Soft GDMA cuts day-ahead commitment cost by 12% on 125 grid areas, five continents.
-Oracle inequality and segment recovery proved for the fixed-G estimator.
-6% of areas are worse off; no systematic income gradient is found.
-Better commitment rules lower the value of storage and change where to site it.
