@@ -1,39 +1,38 @@
 \section{Related literature and the research gap}\label{sec:lit}
 
 \paragraph{Model averaging and forecast combination}
-Since \citet{BatesGranger1969}, combining forecasts has been one of the most reliable ways to improve predictive accuracy; \citet{Timmermann2006} and \citet{Wang2023review} review five decades of work.
-Frequentist model averaging chooses weights by minimising an estimate of risk---a Mallows criterion \citep{Hansen2007}, leave-one-out or $K$-fold cross-validation \citep{HansenRacine2012,ZhangLiu2023}, or forward validation for time series \citep{ZhangZhang2023}---and establishes asymptotic optimality, i.e.\ that the chosen weights attain the lowest attainable risk.
-The framework now covers dependent data \citep{ZhangWanZou2013}, quantile losses \citep{LuSu2015}, general losses \citep{Yu2024unified}, time-varying weights \citep{Sun2021tvma}, covariate-dependent weights \citep{Gong2026moe}, covariate shift \citep{Zhang2026shift} and prediction intervals \citep{Qu2025intervals}.
-The forecast-combination puzzle---that equal weights frequently beat estimated weights---is attributed mainly to estimation error in the weights \citep{SmithWallis2009,Claeskens2016}; remedies shrink estimated weights towards equal weights \citep{DieboldShin2019} or restrict them \citep{Zou2025weights}.
-When many series must be forecast, weights are either estimated series by series or learned from series features \citep[FFORMA,][]{MonteroManso2020}; \citet{AiolfiTimmermann2006} cluster \emph{forecasting models} by past performance.
-All of these approaches either treat each target series separately or impose one rule on all of them, and none groups the \emph{target units}.
+Since \citet{BatesGranger1969}, combining forecasts has been one of the most reliable ways to improve accuracy; \citet{Timmermann2006} and \citet{Wang2023review} review five decades.
+Frequentist model averaging chooses weights by minimising estimated risk---a Mallows criterion \citep{Hansen2007}, leave-one-out or $K$-fold cross-validation \citep{HansenRacine2012,ZhangLiu2023}, or forward validation for time series \citep{ZhangZhang2023}---and establishes asymptotic optimality: the chosen weights attain the lowest attainable risk.
+It now covers dependent data \citep{ZhangWanZou2013}, quantile losses \citep{LuSu2015}, general losses \citep{Yu2024unified}, time-varying weights \citep{Sun2021tvma}, covariate-dependent weights \citep{Gong2026moe}, covariate shift \citep{Zhang2026shift} and prediction intervals \citep{Qu2025intervals}.
+The forecast-combination puzzle, that equal weights frequently beat estimated weights, is attributed mainly to estimation error \citep{SmithWallis2009,Claeskens2016}; remedies shrink weights towards equal weights \citep{DieboldShin2019} or restrict them \citep{Zou2025weights}.
+With many series, weights are estimated series by series or learned from series features \citep[FFORMA,][]{MonteroManso2020}; \citet{AiolfiTimmermann2006} cluster \emph{forecasting models} by past performance.
+All of these treat each target series separately or impose one rule on all, and none groups the \emph{target units}.
 
 \paragraph{Decision-focused learning}
-Operations research has long recognised that the loss that matters is the decision cost \citep{Granger1969}.
-The data-driven newsvendor literature learns order quantities directly from data \citep{Levi2015,BanRudin2019}; prescriptive analytics maps covariates to decisions \citep{BertsimasKallus2020}; and ``smart predict-then-optimise'' trains predictors on decision regret \citep{ElmachtoubGrigas2022}; see \citet{Mandi2024} for a survey.
+The loss that matters is the decision cost \citep{Granger1969}.
+The data-driven newsvendor literature learns order quantities directly from data \citep{Levi2015,BanRudin2019}, prescriptive analytics maps covariates to decisions \citep{BertsimasKallus2020}, and ``smart predict-then-optimise'' trains predictors on decision regret \citep{ElmachtoubGrigas2022}; see \citet{Mandi2024} for a survey.
 In energy forecasting, \citet{Wang2019cqra} combine probabilistic load forecasts by minimising pinball loss on the simplex, one series at a time.
-Most of this literature trains single models or combines forecasts for one unit. An important exception is data pooling \citep{GuptaKallus2022}, which shrinks the solutions of many small newsvendor-type problems towards a common anchor and shows that pooling pays even when the problems are unrelated; decision-focused shrinkage of combination weights towards pooled weights, one of our benchmarks and the $G=1$ case of soft GDMA, applies the same idea to forecast combination.
+Most of this work concerns single models or one unit; the exception is data pooling \citep{GuptaKallus2022}, which shrinks the solutions of many small newsvendor-type problems towards a common anchor, which pays even for unrelated problems; decision-focused shrinkage of weights towards pooled weights, one of our benchmarks and the $G=1$ case of soft GDMA, applies the same idea to forecast combination.
 
 \paragraph{Deep learning for forecasting and for combination weights}
-Pretrained time-series foundation models such as Chronos \citep{Ansari2024chronos} now forecast unseen series zero-shot with accuracy close to models trained on the target data, and deep networks are increasingly used to \emph{produce} combination weights: FFORMA maps series features to weights with gradient boosting \citep{MonteroManso2020}, and mixture-of-experts model averaging uses a softmax neural gate with covariate-dependent weights \citep{Gong2026moe}.
-These approaches are flexible, but they fit thousands of parameters, their weights are hard to audit, and---except for \citet{Gong2026moe}, who study conditional generative models---they come without optimality guarantees for the combined decision.
-We include both a foundation model (as a candidate) and a decision-focused neural gate (as a competitor) in our application.
+Pretrained foundation models such as Chronos \citep{Ansari2024chronos} forecast unseen series zero-shot with accuracy close to trained models, and deep networks increasingly \emph{produce} combination weights: FFORMA maps series features to weights with gradient boosting \citep{MonteroManso2020}, and mixture-of-experts model averaging uses a softmax neural gate \citep{Gong2026moe}.
+These approaches are flexible, but fit thousands of parameters, give weights that are hard to audit and, except for \citet{Gong2026moe}, lack optimality guarantees for the combined decision.
+We include a foundation model as a candidate and a decision-focused neural gate as a competitor.
 
 \paragraph{Storage siting}
-Where to place grid-scale batteries is usually decided with engineering models of the transmission network, solved by decomposition or stochastic programming \citep{Piansky2024battery,Larroux2026bess}.
-These models take the uncertainty that storage must absorb as an input.
-We make that input endogenous: the residual commitment risk depends on how operators combine their forecasts, so the value and the best location of storage depend on the forecasting policy.
+Battery siting is usually decided with engineering models of the transmission network, solved by decomposition or stochastic programming \citep{Piansky2024battery,Larroux2026bess}, which take the uncertainty storage must absorb as an input.
+We make that input endogenous: residual commitment risk depends on how operators combine forecasts, so the value and best location of storage depend on the forecasting policy.
 
 \paragraph{Latent group structures}
 Panel econometrics models unobserved heterogeneity through latent groups estimated by $k$-means-type algorithms \citep{LinNg2012,BonhommeManresa2015,AndoBai2016} or classifier-Lasso \citep{Su2016}.
-\citet{GuVolgushev2019} extend latent groups to panel quantile regression, which is the closest statistical relative of GDMA: a grouped quantile regression of demand on the candidate forecasts would be a grouped, unconstrained version of our quantile-regression benchmark.
-These methods group regression parameters, typically fixed effects, for inference on the parameters themselves; GDMA groups simplex weights over the outputs of existing forecasting systems, with unit-specific critical ratios, and is judged by the out-of-sample cost of the resulting decisions.
+\citet{GuVolgushev2019} extend latent groups to panel quantile regression, the closest statistical relative of GDMA: a grouped quantile regression of demand on the candidate forecasts would be an unconstrained version of our quantile-regression benchmark.
+These methods group regression parameters, typically fixed effects, for inference on the parameters; GDMA groups simplex weights over existing forecasting systems, with unit-specific critical ratios, and is judged by the out-of-sample cost of its decisions.
 
 \paragraph{The gap}
 Table~\ref{tab:gap} summarises the position of GDMA.
-No existing method simultaneously (a) combines a library of existing candidate rules, including machine-learning and foundation-model forecasts, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares statistical strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery; nor does any link the resulting operational risk to the siting of new storage.
-The individual ingredients exist---decision-focused combination, shrinkage across problems, latent groups---and the contribution is their combination, the theory for it, and its use for a planning decision; as the applications show, much of the gain over the best single forecaster is already delivered by decision-focused shrinkage, and grouping adds a smaller refinement.
-Filling this gap matters most when windows are short---because systems change and old data are stale---and units are many, which is exactly the situation of system-wide infrastructure planning.
+No existing method simultaneously (a) combines a library of existing candidate rules, including machine-learning and foundation-model forecasts, (b) chooses weights by the downstream decision cost with unit-specific cost asymmetries, and (c) shares strength across many decision units through latent segments whose number is chosen from data, with guarantees on optimality and segment recovery; nor does any link the resulting operational risk to the siting of new storage.
+The ingredients exist---decision-focused combination, shrinkage across problems, latent groups---and the contribution is their combination, the theory for it, and its use for a planning decision; much of the gain over the best single forecaster is already delivered by decision-focused shrinkage, and grouping adds a smaller refinement.
+The gap matters most when windows are short, because systems change and old data are stale, and units are many, as in infrastructure planning.
 
 \begin{table}[t]
 \centering

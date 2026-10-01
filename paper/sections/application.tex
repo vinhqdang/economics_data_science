@@ -4,114 +4,102 @@
 
 \emph{Reading convention.} Every cost in this paper is an operating cost, so \emph{lower is better}; a ratio below 1 means a lower cost than the benchmark named in the table, and ``more expensive'' means worse. Gains, savings, storage values and the adjusted Rand index are the opposite: higher is better. Each caption states the direction.
 
-We use the complete public record of the U.S.\ Energy Information Administration's Hourly Electric Grid Monitor (Form EIA-930; \citealp{EIA930}), downloaded on 29 September 2026.
-For every balancing authority (BA) in the lower 48 states the file reports hourly demand, the BA's own day-ahead demand forecast and total interchange with neighbouring BAs.
-We use the period 1 January 2019 to 26 September 2026 in UTC hours and exclude the fourteen regional aggregates.
-Following \citet{Ruggles2020}, non-positive values and values outside $[0.3,3]$ times the median of the preceding seven days are treated as missing, and gaps of up to three hours are interpolated; the filter is one-sided, so it uses no future data, and the official forecast is filtered against its own history rather than against realised demand.
+We use the public U.S.\ Hourly Electric Grid Monitor (Form EIA-930; \citealp{EIA930}), downloaded on 29 September 2026: hourly demand, day-ahead demand forecast and total interchange for each balancing authority (BA) in the lower 48 states, 1 January 2019 to 26 September 2026 in UTC hours, excluding the fourteen regional aggregates.
+Following \citet{Ruggles2020}, non-positive values and those outside $[0.3,3]$ times the preceding seven-day median are treated as missing (one-sided filter, applied to the official forecast against its own history) and gaps of up to three hours are interpolated.
 We keep BAs with at least 97\% valid demand, at least 93\% valid official forecasts, mean demand above 50\,MW and a median absolute official forecast error below 15\% of median demand.
-Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators, and account for 97\% of lower-48 demand.
-Ten BAs are dropped, mostly small systems with long gaps or implausible official forecasts; 0.32\% of the retained BA-hours are missing, and 0.6\% of the official forecasts are replaced by the mean of the other candidates.
+Forty-six BAs remain (Table~\ref{tab:bas} in Appendix~\ref{app:data}); they range from PJM (mean demand 92.5\,GW) to the City of Homestead (71\,MW), include all seven independent system operators and cover 97\% of lower-48 demand.
+Ten mostly small BAs are dropped; 0.32\% of retained BA-hours are missing, and 0.6\% of official forecasts are replaced by the mean of the other candidates.
 
 \subsection{Decision problem and cost calibration}
 
-On the morning of day $d-1$, before the day-ahead gate closure, BA $i$ commits hourly capacity $q_{i,d,h}$, $h=0,\dots,23$, for the (UTC) operating day $d$.
-At that time demand is observed only up to the end of day $d-2$: the UTC day $d-1$ ends in the afternoon or evening of local day $d-1$ in the United States, after any day-ahead deadline.
-The information set therefore contains realised demand up to the end of day $d-2$, the realised costs of every rule up to the same day, and the BA's published day-ahead forecast for day $d$; every candidate, margin and estimation window below respects this timing.
-This is a conservative convention: an operator could also use the hours of day $d-1$ observed before the gate closure, which would favour the data-driven candidates slightly.
-Excess commitment costs $o_i=1$ per MWh, which normalises all costs to units of the per-MWh cost of idle committed capacity.
-Shortfalls cost $u_i=\tau_i/(1-\tau_i)$, where the critical ratio $\tau_i$ is meant to reflect how easily the BA can lean on its neighbours.
-As a transparent proxy we use the variability of interchange in the pre-sample year 2019---the range between the 5th and 95th percentiles of hourly total interchange, divided by mean demand---and let $\tau_i$ decline linearly in its rank from $0.95$ for the BA with the least variable interchange to $0.80$ for the one with the most.
-Interchange variability is not transfer capability, and shortfall costs in practice depend on market prices and system conditions; the proxy only orders BAs plausibly, and Section~\ref{sec:robust} reports the results under common critical ratios from 0.5 to 0.95 (and Section~\ref{sec:global} for the global panel under a scarcity-level ratio of 0.99).
-ERCOT, which is almost islanded, receives $\tau=0.95$ ($u_i=19$); the Chelan County PUD in the densely interconnected Pacific Northwest receives $\tau=0.80$ ($u_i=4$).
+Before the day-ahead gate closure on day $d-1$, BA $i$ commits hourly capacity $q_{i,d,h}$, $h=0,\dots,23$, for the (UTC) operating day $d$.
+Demand is observed only to the end of day $d-2$, since UTC day $d-1$ ends after any U.S.\ day-ahead deadline; the information set is demand and rule costs up to day $d-2$ plus the published forecast for day $d$.
+This is conservative: using hours of day $d-1$ would slightly favour the data-driven candidates.
+Excess commitment costs $o_i=1$ per MWh (the normalisation); shortfalls cost $u_i=\tau_i/(1-\tau_i)$, where the critical ratio $\tau_i$ reflects how easily the BA can lean on its neighbours.
+As a proxy we use the 2019 range between the 5th and 95th percentiles of hourly interchange divided by mean demand, and let $\tau_i$ decline linearly in its rank from $0.95$ for the least variable BA to $0.80$ for the most.
+Interchange variability is not transfer capability, so the proxy only orders BAs; Section~\ref{sec:robust} reports common critical ratios from 0.5 to 0.95 (Section~\ref{sec:global}: 0.99 for the global panel).
+Almost islanded ERCOT receives $\tau=0.95$ ($u_i=19$); Chelan County PUD, in the interconnected Pacific Northwest, receives $\tau=0.80$ ($u_i=4$).
 
 \subsection{Candidate rules}
 
-Seven candidate forecasts are produced for every BA, day and hour, each using only the information available at the decision time:
-(1) the BA's official day-ahead forecast;
+Seven candidate forecasts are produced for every BA, day and hour:
+(1) the official forecast;
 (2) persistence (same hour of $d-2$);
 (3) weekly persistence (same hour of $d-7$);
 (4) the mean of the same hour over $d-2,\dots,d-8$;
 (5) the mean of the same hour on $d-7$, $d-14$ and $d-21$;
-(6) a BA-and-hour-specific linear regression on the $d-2$ and $d-7$ values, the official forecast and weekday dummies, estimated on a rolling 56-day window and refitted weekly; and
-(7) a single global LightGBM model \citep{Ke2017} across all BAs and hours, trained on lags, calendar variables and the official forecast, all scaled by the BA's recent mean demand, refitted every 28 days on the preceding 365 days.
-Every training window ends at day $d_0-2$ for forecasts made at origin $d_0$.
-Model (7) is the kind of machine-learning forecaster a central planner could run for every BA at low cost.
-Each forecast $f^{(m)}$ becomes a candidate commitment by adding its own safety margin,
+(6) a BA-and-hour-specific linear regression on the $d-2$ and $d-7$ values, the official forecast and weekday dummies, on a rolling 56-day window refitted weekly; and
+(7) a global LightGBM model \citep{Ke2017} trained on lags, calendar variables and the official forecast, all scaled by the BA's recent mean demand, refitted every 28 days on the preceding 365 days.
+Each forecast $f^{(m)}$ becomes a candidate commitment with its own safety margin,
 \[
 q^{(m)}_{i,d,h}=f^{(m)}_{i,d,h}\,\big\{1+\widehat Q_{\tau_i}(e^{(m)}_i)\big\},
 \]
-where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the empirical $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_{i,t}\}$ of forecast $m$ for BA $i$ over the 28 days ending at $d-2$; the floor at 20\% of the BA's mean demand $\bar y_{i,t}$ over the week before the error's day $t$ prevents an occasional implausibly small forecast from producing an unbounded margin.
-The candidate rules are available from February 2020 and, with the 28-day margin window, the 56-day window cap and the two-day information lag, the evaluation period runs from 1 May 2020 to 26 September 2026: 2,340 days, 335 weekly re-estimations and 25.8 billion MWh of demand.
+where $\widehat Q_{\tau_i}(e^{(m)}_i)$ is the $\tau_i$-quantile of the relative errors $(y-f^{(m)})/\max\{f^{(m)},0.2\bar y_{i,t}\}$ of forecast $m$ over the 28 days ending at $d-2$; the 20\% floor on the BA's mean demand $\bar y_{i,t}$ over the week before day $t$ bounds the margin.
+Given the 28-day margin window, the 56-day window cap and the two-day lag, candidates exist from February 2020 and evaluation runs from 1 May 2020 to 26 September 2026: 2,340 days, 335 weekly re-estimations and 25.8 billion MWh of demand.
 
 \subsection{Competing methods}
 
-Every seven days, at origin $d_0$, each method re-estimates its combination from the $W$ most recent days whose outcomes are known, $d_0-W-1,\dots,d_0-2$, $W\in\{7,14,28,56\}$ (each day contributes 24 hourly observations per BA), and commits for the following seven days.
-Besides GDMA and soft GDMA ($G_{\max}=6$) we consider:
-the official-forecast policy (candidate~1 alone), the reference rule in the U.S.\ analysis---a stylised version of committing on the operator's own forecast, since actual commitment runs through market clearing, reliability unit commitment and reserve procurement;
+Every seven days, at origin $d_0$, each method re-estimates its combination from the $W$ most recent days with known outcomes, $d_0-W-1,\dots,d_0-2$, $W\in\{7,14,28,56\}$ (24 hourly observations per BA per day), and commits for the next seven days.
+Besides GDMA and soft GDMA ($G_{\max}=6$) we consider
+the official-forecast policy (candidate~1 alone), the reference rule, a stylisation of actual commitment, which runs through market clearing;
 equal weights over the seven candidates;
-the best single candidate per BA over the window;
-pooled decision-focused weights;
-per-BA decision-focused weights (the decision-focused analogue of per-series forward validation);
-shrinkage of per-BA weights towards pooled weights with the shrinkage intensity chosen on the hold-out (a decision-focused version of \citealp{DieboldShin2019});
-two-step clustering, which runs $k$-means on the per-BA weight vectors and re-estimates pooled weights within clusters, with the number of clusters chosen by the same hold-out and one-standard-error rule as GDMA;
-a linear quantile-regression combination, which regresses demand on the seven point forecasts at each BA's critical ratio $\tau_i$ without the simplex constraint (the natural decision-focused combination of \citealp{Wang2019cqra});
-and two \emph{forecast-then-commit} methods, which estimate per-BA or grouped combination weights by minimising scaled squared forecast error and then add the $\tau_i$-quantile of the combined forecast's relative errors over the same 28 days that set the candidates' margins.
-The last two isolate the value of estimating the combination for the decision rather than for accuracy.
-All hold-out choices ($G$, $\kappa$ and the shrinkage intensity) use the same split of the estimation window: every third day, counted back from the end of the window, is a validation day, so that the validation days span the window and cycle through the days of the week across origins.
+the best single candidate per BA;
+pooled and per-BA decision-focused weights;
+shrinkage of per-BA towards pooled weights (cf.\ \citealp{DieboldShin2019});
+two-step clustering, which runs $k$-means on per-BA weight vectors and re-estimates pooled weights within clusters;
+a quantile-regression combination of the seven forecasts at each BA's $\tau_i$ without the simplex constraint (\citealp{Wang2019cqra});
+and two \emph{forecast-then-commit} methods, which estimate per-BA or grouped weights by minimising scaled squared forecast error and then add the $\tau_i$-quantile of the combined forecast's relative errors over 28 days, isolating the value of estimating for the decision rather than for accuracy.
+The number of clusters, $G$, $\kappa$ and the shrinkage intensity are chosen on one hold-out split in which every third day, counted back from the window's end, is a validation day.
 
 \subsection{Results}
 
 \begin{table}[t]
 \centering
-\caption{Out-of-sample system-wide commitment cost, 1 May 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the length of the estimation window. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:main}
+\caption{Out-of-sample system-wide commitment cost, 1 May 2020 to 26 September 2026, relative to committing on the official day-ahead forecasts. $W$ is the estimation window length. Bold: lowest cost in the column. Stars: Diebold--Mariano test of equal daily system cost against soft GDMA with Newey--West variance (7 lags); $^{*}$, $^{**}$, $^{***}$: $p<0.10,0.05,0.01$. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:main}
 \footnotesize
 \input{tables/main.tex}
 \par\smallskip\footnotesize $^a$ Share of the 46 BAs whose own cost is lower than under the official-forecast policy ($W=28$).
 \end{table}
 
-Table~\ref{tab:main} contains the main result.
-Four findings stand out.
+Table~\ref{tab:main} gives the main result.
 
 \emph{First, deciding for the decision pays.}
-Soft GDMA lowers the system-wide commitment cost by 13--17\% relative to committing on the official forecasts, depending on the window, and every decision-focused combination on the simplex lowers it by 11--17\%; soft GDMA's reduction is significant at the 1\% level for every window.
-The forecast-then-commit methods, which combine the same seven forecasts for accuracy and then add a quantile margin, save 7--15\%, and they are significantly more expensive than soft GDMA for every window length; the gap is largest when windows are short ($W=7$: 0.930 and 0.882 against 0.867), because accuracy-optimal weights are chosen without regard to the asymmetric costs.
-The unconstrained quantile-regression combination, the most direct decision-focused alternative, is competitive only with long windows (0.846 at $W=56$) and very poor with short ones (1.297 at $W=7$): with seven highly collinear forecasts and a few weeks of data, freeing the weights from the simplex costs more in variance than it gains in flexibility.
-Equal weights are the worst choice: they give weight to the naive calendar rules and raise cost by 69\%.
+Soft GDMA lowers the system-wide commitment cost by 13--17\% relative to the official forecasts (significant at the 1\% level for every window), and every decision-focused simplex combination by 11--17\%.
+The forecast-then-commit methods save 7--15\% and are significantly more expensive than soft GDMA for every window, most at $W=7$ (0.930 and 0.882 against 0.867), as accuracy-optimal weights ignore the asymmetric costs.
+The unconstrained quantile-regression combination is competitive only with long windows (0.846 at $W=56$) and poor with short ones (1.297 at $W=7$), where dropping the simplex costs more in variance than it gains.
+Equal weights are worst, raising cost by 69\%.
 
 \emph{Second, neither extreme is right.}
-Per-BA weights are expensive when windows are short (0.890 at $W=7$, 4.0\% above pooled weights), pooled weights are expensive when windows are long (0.840 at $W=56$, 1.4\% above the best grouped rule), and the ranking of the two reverses between $W=14$ and $W=28$.
-This is the bias--variance trade-off that motivates GDMA.
+Per-BA weights are costly with short windows (0.890 at $W=7$, 4.0\% above pooled weights), pooled weights with long windows (0.840 at $W=56$, 1.4\% above the best grouped rule), and their ranking reverses between $W=14$ and $W=28$, the bias--variance trade-off behind GDMA.
 
 \emph{Third, grouping helps, but the three grouped rules are statistically indistinguishable.}
-For $W\ge14$ the three cheapest methods are the grouped ones---two-step clustering, GDMA and soft GDMA---and at $W=28$ they form the 90\% model confidence set of \citet{Hansen2011mcs} (marked $\dagger$ in Table~\ref{tab:main}), which excludes shrinkage towards pooled weights (MCS $p$-value 0.03), per-BA and pooled weights and all other rules.
-The differences among the three are below 0.2\% at $W=28$ and $W=56$ and about 0.5\% at $W=14$; two-step clustering is marginally the cheapest of them, and with a one-week window pooled weights are cheapest overall (0.856, against 0.859--0.867 for the grouped rules).
-Soft GDMA improves on the official forecast for the largest share of BAs (63\%, against 57--59\% for the other grouped rules and 54\% for shrinkage), and choosing $G$ by the one-standard-error rule rather than the plain hold-out minimum lowers the cost of GDMA for short windows (0.864 against 0.874 at $W=7$).
-The evidence therefore supports decision-focused combination with cross-sectional structure; which of the grouped variants a planner uses matters much less.
+For $W\ge14$ the three cheapest methods are two-step clustering, GDMA and soft GDMA, and at $W=28$ they form the 90\% model confidence set of \citet{Hansen2011mcs} (marked $\dagger$ in Table~\ref{tab:main}), which excludes shrinkage (MCS $p$-value 0.03) and all other rules.
+They differ by less than 0.2\% at $W=28$ and $W=56$ and about 0.5\% at $W=14$; two-step clustering is marginally cheapest, and at $W=7$ pooled weights are cheapest (0.856, against 0.859--0.867 for the grouped rules).
+Soft GDMA beats the official forecast for the largest share of BAs (63\%, against 57--59\% for the other grouped rules and 54\% for shrinkage), and the one-standard-error rule lowers GDMA's cost at $W=7$ (0.864 against 0.874 for the hold-out minimum).
+Which grouped variant is used matters less than using cross-sectional structure.
 
 \emph{Fourth, the savings are economically meaningful.}
-At $W=28$ the official-forecast policy costs 0.0779 units of idle-capacity cost per MWh of demand and soft GDMA 0.0651, a saving of 0.0128 units per MWh.
-Over the roughly 4.0 billion MWh of annual demand in our panel (25.8 billion MWh over the evaluation period), and valuing idle committed capacity at an illustrative \$10 per MWh, this is roughly \$500 million a year for the system as a whole under the stylised cost model, obtained by re-weighting forecasts that the operators already produce.
-The saving is not driven by a few operators, but it is not universal either: 63\% of BAs are individually better off than under their own official forecast (last column of Table~\ref{tab:main}), and the official forecast remains the better rule for the rest.
+At $W=28$ the official-forecast policy costs 0.0779 units per MWh of demand and soft GDMA 0.0651, a saving of 0.0128.
+With roughly 4.0 billion MWh of annual demand (25.8 billion over the evaluation period) and idle capacity valued at an illustrative \$10 per MWh, this is roughly \$500 million a year under the stylised cost model.
+The saving is not universal: 63\% of BAs are better off than under their own official forecast (last column of Table~\ref{tab:main}), and the official forecast is better for the rest.
 
 \begin{table}[t]
 \centering
-\caption{Secondary metrics for $W=28$ days. Scale-free cost and shortfall frequency: lower is better for cost; the shortfall frequency should be close to the target. DM statistic: positive values mean the method is more expensive than soft GDMA.}\label{tab:secondary}
+\caption{Secondary metrics for $W=28$ days. Lower is better for cost; the shortfall frequency should be close to the target. DM statistic: positive values mean the method is more expensive than soft GDMA.}\label{tab:secondary}
 \small
 \input{tables/secondary.tex}
 \par\smallskip\footnotesize
-$^b$ Each BA's cost divided by its mean hourly demand, averaged over BAs with equal weight, relative to equal weights.
+$^b$ Each BA's cost divided by its mean hourly demand, averaged over BAs, relative to equal weights.
 $^c$ Diebold--Mariano statistic; positive values: the method has higher daily system cost than soft GDMA.
 \end{table}
 
-Table~\ref{tab:secondary} and Figure~\ref{fig:cum} confirm the picture.
-With every BA weighted equally rather than by its size, soft GDMA is the cheapest method, so the results are not an artefact of the three largest ISOs.
-The decision-focused simplex methods hit the target shortfall frequency closely (12.0--12.5\% against a target of 12.5\%, the average of $1-\tau_i$), whereas the official-forecast policy, the forecast-then-commit methods and the quantile-regression combination fall short too often (13.7--15.9\%).
-The cumulative saving builds up steadily rather than in a few episodes.
+Table~\ref{tab:secondary} and Figure~\ref{fig:cum} confirm this: with every BA weighted equally soft GDMA is still cheapest, so the result is not driven by the three largest ISOs, and the saving builds up steadily.
+The decision-focused simplex methods hit the target shortfall frequency of 12.5\% (the average of $1-\tau_i$) closely (12.0--12.5\%); the official-forecast policy, the forecast-then-commit methods and the quantile-regression combination fall short too often (13.7--15.9\%).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/cumulative.pdf}
-\caption{Cumulative system-wide cost saving relative to the official-forecast policy ($W=28$). Higher is better. The curve is the cumulative cost saving: an upward slope means soft GDMA is cheaper.}\label{fig:cum}
+\caption{Cumulative system-wide cost saving relative to the official-forecast policy ($W=28$). Higher is better.}\label{fig:cum}
 \end{figure}
 
 \subsection{Segments}
@@ -119,31 +107,28 @@ The cumulative saving builds up steadily rather than in a few episodes.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/segments.pdf}
-\caption{Left: number of segments selected by GDMA in each weekly re-estimation ($W=28$). Right: among the weeks with $G\ge2$, share of weeks in which two BAs belong to the same segment, ordered by average-linkage clustering.}\label{fig:segments}
+\caption{Left: number of segments selected by GDMA in each weekly re-estimation ($W=28$). Right: among weeks with $G\ge2$, share of weeks in which two BAs share a segment.}\label{fig:segments}
 \end{figure}
 
-GDMA uses a single segment in 16\% of the weeks and two to four segments in two thirds of them (Figure~\ref{fig:segments}, left); soft GDMA shrinks towards the segment rule with an average intensity of only $\kappa=0.14$, so in the U.S.\ panel it mostly refines unit-level weights.
-The co-membership matrix (right) reveals two stable segments.
-The first contains 16 BAs, among them PJM, CAISO, ISO New England, Florida Power \& Light, Arizona Public Service, Nevada Power, PacifiCorp East and the Southern Company; their combinations rely mostly on the learned models (weights of 0.38 on the hourly regression and 0.39 on LightGBM) and put 0.20 directly on the official forecast.
-The second contains 29 BAs, including MISO, ERCOT, NYISO, Southwest Power Pool, TVA, Bonneville and Duke Energy, and puts 0.44 directly on the official forecast; the Los Angeles Department of Water and Power often forms a segment of its own.
-The two main segments have similar average critical ratios (0.886 and 0.868), so the segmentation is not a relabelling of cost asymmetries; nor does it follow geography or market design, since both contain ISOs and vertically integrated utilities from the East and the West.
-What separates them is how much the operator's own forecast adds to what can be learned from recent demand---information that a planner cannot read off the organisational chart of the grid, but that the data reveal.
+GDMA uses one segment in 16\% of the weeks and two to four in two thirds of them (Figure~\ref{fig:segments}, left); soft GDMA's average shrinkage towards the segment rule is only $\kappa=0.14$, so it mostly refines unit-level weights.
+The co-membership matrix (right) shows two stable segments.
+The first has 16 BAs, among them PJM and CAISO, and weights the hourly regression 0.38, LightGBM 0.39 and the official forecast 0.20.
+The second has 29 BAs, including MISO and ERCOT, and puts 0.44 on the official forecast; the Los Angeles Department of Water and Power often forms its own segment.
+The segments have similar average critical ratios (0.886 and 0.868) and do not follow geography or market design; both mix ISOs and vertically integrated utilities from the East and West.
+They differ in how much the operator's forecast adds to what recent demand reveals.
 
 \subsection{Extreme events and robustness}\label{sec:robust}
 
 \begin{table}[t]
 \centering
-\caption{System cost during extreme events relative to the official-forecast policy ($W=28$): Winter Storm Uri (10--20 February 2021), Winter Storm Elliott (21--26 December 2022, the window of the FERC--NERC inquiry) and the summer heat of 15 July--15 August 2023. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:events}
+\caption{System cost during extreme events relative to the official-forecast policy ($W=28$): Winter Storm Uri (10--20 February 2021), Winter Storm Elliott (21--26 December 2022) and the summer heat of 15 July--15 August 2023. Lower is better: values below 1 mean a lower cost than the benchmark.}\label{tab:events}
 \small
 \input{tables/events.tex}
 \end{table}
 
-Table~\ref{tab:events} examines three extreme episodes.
-During Winter Storm Uri and the summer heat of 2023, the decision-focused combinations cost 4--7\% and 16--19\% less than the official-forecast policy.
-The Uri comparison should be read with care: ERCOT, and on two days SPP and MISO, shed load \citep{FERCNERC2021}, and EIA-930 reports served demand, so a commitment that anticipated true demand is scored as over-commitment on those days; Section~\ref{sec:global} repeats the event analysis without the load-shed BA-days.
-Winter Storm Elliott is different: over the six days of the storm the operators' forecasts were much better than every candidate rule, and every combination is 17--30\% more expensive than the official policy.
-This is consistent with the storm's nature---an abrupt cold snap with large forced outages \citep{FERCNERC2023}---and with the fact that weights learned from the previous weeks cannot anticipate a regime change.
-Section~\ref{sec:global} adds candidates driven by archived deterministic and ensemble weather forecasts and examines whether they narrow this gap.
+In Table~\ref{tab:events}, during Winter Storm Uri and the 2023 summer heat, the decision-focused combinations cost 4--7\% and 16--19\% less than the official-forecast policy.
+For Uri, ERCOT, and on two days SPP and MISO, shed load \citep{FERCNERC2021} and EIA-930 reports served demand, so anticipating true demand is scored as over-commitment; Section~\ref{sec:global} repeats the analysis without the load-shed BA-days.
+During Winter Storm Elliott the operators' forecasts beat every candidate rule over the six days and every combination is 17--30\% more expensive than the official policy, as expected for an abrupt cold snap with large forced outages \citep{FERCNERC2023} that weights learned from earlier weeks cannot anticipate; Section~\ref{sec:global} tests whether weather-driven candidates narrow this gap.
 
 \begin{table}[t]
 \centering
@@ -152,6 +137,6 @@ Section~\ref{sec:global} adds candidates driven by archived deterministic and en
 \input{tables/tau.tex}
 \end{table}
 
-Table~\ref{tab:tau} replaces the calibrated critical ratios by a common $\tau$ for every BA, from the symmetric case $\tau=0.5$ to the highly asymmetric $\tau=0.95$.
-The level of the savings changes little---soft GDMA saves 17--19\% relative to the official-forecast policy---and neither does the ranking: two-step clustering is cheapest in every column, soft GDMA and GDMA follow within 0.5\%, and shrinkage, per-BA and pooled weights come next.
-The advantage of decision-focused over forecast-then-commit combination grows with the asymmetry, from 1.4\% at $\tau=0.5$ to 2.8\% at $\tau=0.95$ relative to the better forecast-then-commit method, as expected: the more asymmetric the cost, the more the best combination for the decision departs from the most accurate one.
+Table~\ref{tab:tau} replaces the calibrated ratios by a common $\tau$, from the symmetric $\tau=0.5$ to the highly asymmetric $\tau=0.95$.
+Savings change little (soft GDMA saves 17--19\%) and neither does the ranking: two-step clustering is cheapest in every column, soft GDMA and GDMA follow within 0.5\%, then shrinkage, per-BA and pooled weights.
+The advantage over the better forecast-then-commit method grows with the asymmetry, from 1.4\% at $\tau=0.5$ to 2.8\% at $\tau=0.95$, as the best combination for the decision departs further from the most accurate one.
