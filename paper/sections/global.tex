@@ -36,6 +36,14 @@ Total & & 125 & 2018--2026 & 1.66\,TW \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig_map_gain.pdf}
+\caption{Where soft GDMA saves cost. Each marker is one of the 125 grid areas, coloured by the cost of soft GDMA relative to the reference forecaster ($W=28$; lower is better, values below 1 mean a lower cost than the reference). Marker size shows the area's mean demand.}\label{fig:mapgain}
+\end{figure}
+
+Figure~\ref{fig:mapgain} shows where the gains are: soft GDMA is cheaper than the reference in every European area (0.84--0.95), the largest gains are in a few U.S.\ western balancing authorities (Tucson, the California ISO and the Lower Colorado area, 0.45--0.59), and 25 of the 125 areas, 13 of them in China, are more costly than the reference.
+
 \subsection{Candidates, costs and competitors}\label{sec:globalcand}
 
 Every area receives eleven candidate forecasts: the seven of Section~\ref{sec:app}; a zero-shot forecast from the pretrained time-series foundation model Chronos-Bolt (the small model; \citealp{Ansari2024chronos}), which receives the 28 days of hourly demand known at the decision time, forecasts the next 48 hours and contributes the last 24 of them, without any fine-tuning; and three weather-aware global LightGBM models.
@@ -130,6 +138,12 @@ Elliott is therefore not typical of extreme weather in general; it is an abrupt 
 \input{tables/global_extremes.tex}
 \par\smallskip\footnotesize $^a$ As in Table~\ref{tab:global}.
 \end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig_elliott.pdf}
+\caption{Winter Storm Elliott, 14--31 December 2022: daily commitment cost of the 46 U.S.\ balancing authorities (relative to the mean daily cost under the operators' forecasts; lower is better) and the mean temperature of their load centres. The shaded days are the FERC--NERC window.}\label{fig:elliott}
+\end{figure}
 
 \paragraph{Tail risk}
 The linear cost model hides the tail, so Table~\ref{tab:tail} reports the average of the costliest 5\% of days (CVaR$_{95}$) and the costliest week of the world's daily commitment cost.

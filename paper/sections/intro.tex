@@ -24,6 +24,20 @@ The number of segments and the shrinkage intensity are chosen by a time-ordered 
 Pooled weights, unit-specific weights and shrinkage towards pooled weights are special cases, and the combined commitment is always a convex combination of commitments the operator already understands.
 A second, planning stage takes the residual shortfall risk left by the learned rule and allocates a storage budget across grid areas.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_pipeline.pdf}
+\caption{The approach from public data to storage siting.}\label{fig:pipeline}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig_timeline.pdf}
+\caption{Information set of the day-ahead commitment. Data up to the end of day $d-2$ and the 00~UTC weather forecast of day $d-1$ (only where it is available before gate closure) enter the commitment for day $d$.}\label{fig:timeline}
+\end{figure}
+
+Figure~\ref{fig:pipeline} summarises the approach and Figure~\ref{fig:timeline} the timing of the information.
+
 We make five contributions.
 \begin{enumerate}
 \item \textbf{Method.} We formulate the joint learning of latent segments and combination weights under an asymmetric, unit-specific decision loss, give a $k$-means-type algorithm with regret-space seeding in which every step is a small convex program, and link it to a storage-siting problem that is solved exactly by a greedy algorithm (Section~\ref{sec:method}).
